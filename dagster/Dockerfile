@@ -10,7 +10,8 @@ RUN pip install \
     dagster-graphql \
     dagster-webserver \
     dagster-postgres \
-    dagster-docker
+    dagster-docker \
+    pandas
 
 ENV DAGSTER_APP=/opt/dagster/app
 COPY dagster/workspace.yaml $DAGSTER_APP
