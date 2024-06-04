@@ -1,11 +1,5 @@
 # osm_data_pet_project
 
-Example API calls:
-https://api.openstreetmap.org/api/0.6/changesets?closed=true.json
-https://api.openstreetmap.org/api/0.6/changeset/151739051/download
-https://api.openstreetmap.org/api/0.6/node/11929234109
+This is a pet project for OTUS Data Warehouse Analyst course.
 
-Test git integration with sublime
-Test 2
-
-Test 3
+Basic functionality includes fetching data from OSM public API, storing it into PostgreSQL and building analytical dashboadrs with Apache Superset.
