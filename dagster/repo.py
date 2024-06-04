@@ -1,40 +1,17 @@
-from dagster import FilesystemIOManager, graph, op, repository, schedule
-from dagster_docker import docker_executor
+from dagster import asset
+from xml.etree.ElementTree import XMLParser
+import requests
 
-
-@op
-def hello():
-    return 1
-
-
-@op
-def goodbye(foo):
-    if foo != 1:
-        raise Exception("Bad io manager")
-    return foo * 2
-
-
-@graph
-def my_graph():
-    goodbye(hello())
-
-
-my_job = my_graph.to_job(name="my_job")
-my_job3 = my_graph.to_job(name="my_job3")
-my_job4 = my_graph.to_job(name="my_job4")
-
-my_step_isolated_job = my_graph.to_job(
-    name="my_step_isolated_job",
-    executor_def=docker_executor,
-    resource_defs={"io_manager": FilesystemIOManager(base_dir="/tmp/io_manager_storage")},
-)
-
-
-@schedule(cron_schedule="* * * * *", job=my_job, execution_timezone="US/Central")
-def my_schedule(_context):
-    return {}
-
-
-@repository
-def deploy_docker_repository():
-    return [my_job, my_job3, my_job4, my_step_isolated_job, my_schedule]
+@asset
+def test_osm_get() -> None:
+    api_url = "https://api.openstreetmap.org/api/0.6/changesets"
+    api_params = {'bbox': '29.6562,59.7163,30.6711,60.1757', 'closed': 'true'}
+    r = requests.get(api_url, params=api_params)
+    if r.status_code == requests.codes.ok:
+        parser = XMLParser()
+        parser.feed(r.text)
+        xml_root = parser.close()
+        for changeset in xml_root.findall('changeset'):
+            print("ID: " + changeset.get('id'))
+            print(changeset.items())
+            continue
