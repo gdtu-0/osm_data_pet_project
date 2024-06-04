@@ -20,7 +20,8 @@ def my_graph():
 
 
 my_job = my_graph.to_job(name="my_job")
-my_job2 = my_graph.to_job(name="my_job2")
+my_job3 = my_graph.to_job(name="my_job3")
+my_job4 = my_graph.to_job(name="my_job4")
 
 my_step_isolated_job = my_graph.to_job(
     name="my_step_isolated_job",
@@ -36,4 +37,4 @@ def my_schedule(_context):
 
 @repository
 def deploy_docker_repository():
-    return [my_job, my_job2, my_step_isolated_job, my_schedule]
+    return [my_job, my_job3, my_job4, my_step_isolated_job, my_schedule]
