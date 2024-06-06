@@ -14,16 +14,16 @@ RUN pip install \
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
 RUN mkdir -p $DAGSTER_HOME
 COPY dagster/dagster.yaml $DAGSTER_HOME
-WORKDIR $DAGSTER_HOME
-# Install additional requirements
-COPY dagster/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
 
 # Create dagster app dir and copy workspace.yaml config file
 ENV DAGSTER_APP=/opt/dagster/app
 RUN mkdir -p $DAGSTER_APP
 COPY dagster/workspace.yaml $DAGSTER_APP
 WORKDIR $DAGSTER_APP
+
+# Install additional requirements
+COPY dagster/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
 # Expose dagster webserver port
 EXPOSE 3000

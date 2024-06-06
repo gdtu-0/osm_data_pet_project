@@ -1,3 +1,4 @@
 load_from:
   # Each entry here corresponds to a file that exposes user code.
-  - python_file: repo.py
+  # - python_file: osm_data/osm_data.py
+  - python_module: osm_data

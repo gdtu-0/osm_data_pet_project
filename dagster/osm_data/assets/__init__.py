@@ -1,0 +1,1 @@
+OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6/"
