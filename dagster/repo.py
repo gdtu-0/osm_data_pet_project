@@ -1,4 +1,4 @@
-from dagster import asset
+from dagster import asset, op, define_asset_job, Definitions
 from xml.etree.ElementTree import XMLParser
 from datetime import datetime
 import pandas as pd
@@ -8,7 +8,7 @@ import time
 OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6/"
 
 @asset
-def get_cities_coordinates() -> pd.DataFrame:
+def cities_coordinates() -> pd.DataFrame:
     coord_l = [
         ['St.Petersburg', 29.65, 59.75, 30.65, 60.10],
     ]
@@ -16,17 +16,16 @@ def get_cities_coordinates() -> pd.DataFrame:
     return coord_df
 
 @asset
-def get_changeset_headers(get_cities_coordinates: pd.DataFrame) -> pd.DataFrame:
+def changeset_headers(cities_coordinates: pd.DataFrame) -> pd.DataFrame:
     api_url = OSM_API_URL_BASE + "changesets"
-    cities_df = get_cities_coordinates
     utc_timestamp = datetime.utcfromtimestamp(time.time())
     chst_headers_l = []
-    for ind in cities_df.index:
+    for ind in cities_coordinates.index:
         bbox_str = "{},{},{},{}".format(
-                cities_df['min_lon'][ind],
-                cities_df['min_lat'][ind],
-                cities_df['max_lon'][ind],
-                cities_df['max_lat'][ind],
+                cities_coordinates['min_lon'][ind],
+                cities_coordinates['min_lat'][ind],
+                cities_coordinates['max_lon'][ind],
+                cities_coordinates['max_lat'][ind],
             )
         api_params = {'bbox': bbox_str, 'closed': 'true'}
         r = requests.get(api_url, params=api_params)
@@ -44,7 +43,7 @@ def get_changeset_headers(get_cities_coordinates: pd.DataFrame) -> pd.DataFrame:
                         source = l_tag.get('v')
                 chst_current_l = [
                     utc_timestamp,
-                    cities_df['city'][ind],
+                    cities_coordinates['city'][ind],
                     l_changeset.get('id'),
                     l_changeset.get('closed_at'),
                     l_changeset.get('user'),
@@ -56,11 +55,11 @@ def get_changeset_headers(get_cities_coordinates: pd.DataFrame) -> pd.DataFrame:
     return chst_headers_df
 
 @asset
-def get_changeset_data(get_changeset_headers: pd.DataFrame) -> None:
-    chst_headers = get_changeset_headers
-    for ind in chst_headers.index:
-        # print(chst_headers['changeset_id'][ind])
-        chst_id = chst_headers['changeset_id'][ind]
+def changeset_data(changeset_headers: pd.DataFrame) -> pd.DataFrame:
+    utc_timestamp = datetime.utcfromtimestamp(time.time())
+    chst_data_l = []
+    for ind in changeset_headers.index:
+        chst_id = changeset_headers['changeset_id'][ind]
         api_url = OSM_API_URL_BASE + "changeset/" + chst_id + "/download"
         r = requests.get(api_url)
         if r.status_code == requests.codes.ok:
@@ -77,4 +76,22 @@ def get_changeset_data(get_changeset_headers: pd.DataFrame) -> None:
                     for l_tag in l_elem_type.iter('tag'):
                         k = l_tag.get('k')
                         v = l_tag.get('v')
-                        print(chst_id, action, elem_type, elem_id, k, v)
+                        chst_data_current_l = [
+                            utc_timestamp,
+                            chst_id,
+                            action,
+                            elem_type,
+                            elem_id,
+                            k,
+                            v,
+                        ]
+                        chst_data_l.append(chst_data_current_l)
+    chst_data_df = pd.DataFrame(chst_data_l, columns=['utc_timestamp', 'chst_id', 'action', 'elem_type', 'elem_id', 'k', 'v'])
+    return chst_data_df
+
+get_osm_changeset_data = define_asset_job(name='get_osm_changeset_data', selection=['cities_coordinates', 'changeset_headers', 'changeset_data'])
+
+defs = Definitions(
+    assets=[cities_coordinates, changeset_headers, changeset_data],
+    jobs=[get_osm_changeset_data],
+)

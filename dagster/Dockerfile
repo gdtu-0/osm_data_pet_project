@@ -1,26 +1,32 @@
-# Dagster libraries to run both dagster-webserver and the dagster-daemon. Does not
-# need to have access to any pipeline code.
+# Dagster libraries to run both dagster-webserver and the dagster-daemon.
 
 FROM python:3.10-slim
 
-RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
-
+# Install base dagster modules
 RUN pip install \
     dagster \
     dagster-graphql \
     dagster-webserver \
     dagster-postgres \
-    dagster-docker \
-    pandas
+    dagster-docker
 
-ENV DAGSTER_APP=/opt/dagster/app
-COPY dagster/workspace.yaml $DAGSTER_APP
-
+# Create dagster home dir and copy dagster.yaml config file
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
+RUN mkdir -p $DAGSTER_HOME
 COPY dagster/dagster.yaml $DAGSTER_HOME
+WORKDIR $DAGSTER_HOME
+# Install additional requirements
+COPY dagster/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
+# Create dagster app dir and copy workspace.yaml config file
+ENV DAGSTER_APP=/opt/dagster/app
+RUN mkdir -p $DAGSTER_APP
+COPY dagster/workspace.yaml $DAGSTER_APP
 WORKDIR $DAGSTER_APP
 
+# Expose dagster webserver port
 EXPOSE 3000
 
+# Start everything
 ENTRYPOINT ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]

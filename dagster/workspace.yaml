@@ -1,3 +1,3 @@
 load_from:
-  # Each entry here corresponds to a service in the docker-compose file that exposes user code.
+  # Each entry here corresponds to a file that exposes user code.
   - python_file: repo.py
