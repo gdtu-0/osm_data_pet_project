@@ -5,8 +5,15 @@ services:
     image: postgres
     container_name: dagster_db
     restart: always
-    env_file:
-      - dagster/dagster_db_credentials.env
+    environment:
+      POSTGRES_DB: ${DAGSTER_DB_NAME}
+      POSTGRES_USER: ${DAGSTER_DB_USER}
+      POSTGRES_PASSWORD: ${DAGSTER_DB_PASSWORD}
+    healthcheck:
+      test: pg_isready -U ${DAGSTER_DB_USER} -d ${DAGSTER_DB_NAME}
+      interval: 30s
+      timeout: 5s
+      retries: 5
     networks:
       - osm_data_pet_project_network
 
@@ -17,8 +24,13 @@ services:
       dockerfile: dagster/Dockerfile
     container_name: dagster
     restart: always
-    env_file:
-      - dagster/dagster_db_credentials.env
+    environment:
+      DAGSTER_DB_NAME: ${DAGSTER_DB_NAME}
+      DAGSTER_DB_USER: ${DAGSTER_DB_USER}
+      DAGSTER_DB_PASSWORD: ${DAGSTER_DB_PASSWORD}
+      TARGET_DB_NAME: ${TARGET_DB_NAME}
+      TARGET_DB_USER: ${TARGET_DB_USER}
+      TARGET_DB_PASSWORD: ${TARGET_DB_PASSWORD}
     ports:
       - "3000:3000"
     volumes:
@@ -26,7 +38,29 @@ services:
     networks:
       - osm_data_pet_project_network
     depends_on:
-      - dagster_db
+      dagster_db:
+        condition: service_healthy
+      osm_data_db:
+        condition: service_healthy
+
+  # This service runs target database for staging and analysis
+  osm_data_db:
+    image: postgres
+    container_name: osm_data_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${TARGET_DB_NAME}
+      POSTGRES_USER: ${TARGET_DB_USER}
+      POSTGRES_PASSWORD: ${TARGET_DB_PASSWORD}
+    healthcheck:
+      test: pg_isready -U ${TARGET_DB_USER} -d ${TARGET_DB_NAME}
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    networks:
+      - osm_data_pet_project_network
 
 networks:
   osm_data_pet_project_network:

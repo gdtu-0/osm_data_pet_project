@@ -1,4 +1,4 @@
-from dagster import asset
+from dagster import asset, Output, MetadataValue
 from pandas import DataFrame
 
 @asset
