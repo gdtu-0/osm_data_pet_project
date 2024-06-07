@@ -1,0 +1,73 @@
+from dagster import ConfigurableResource
+
+import requests
+from requests import Response
+
+from xml.etree.ElementTree import XMLParser
+from pandas import DataFrame
+
+OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6/"
+
+class OsmPublicApi(ConfigurableResource):
+
+	def get_closed_changesets_by_bbox(self, min_lon, min_lat, max_lon, max_lat) -> DataFrame:
+		api_url = OSM_API_URL_BASE + "changesets"
+		bbox_str = "{},{},{},{}".format(min_lon, min_lat, max_lon, max_lat)
+		api_params = {'bbox': bbox_str, 'closed': 'true'}
+		r = requests.get(api_url, params=api_params)
+		if r.status_code == requests.codes.ok:
+			return self._parse_xml_changeset_headers_to_df(xml_data=r)
+	
+	def _parse_xml_changeset_headers_to_df(self, xml_data: Response) -> DataFrame:
+		parser = XMLParser()
+		parser.feed(xml_data.text)
+		xml_root = parser.close()
+		chst_headers_l = []
+		for l_changeset in xml_root.findall('changeset'):
+			comment = str()
+			source = str()
+			for l_tag in l_changeset.iter('tag'):
+				if l_tag.get('k') == 'comment':
+					comment = l_tag.get('v')
+				if l_tag.get('k') in ['source', 'imagery_used']:
+					source = l_tag.get('v')
+			chst_headers_l.append({
+				'changeset_id':l_changeset.get('id'),
+				'closed_at': l_changeset.get('closed_at'),
+				'user': l_changeset.get('user'),
+				'comment': comment,
+				'source': source,
+			})
+		return DataFrame.from_dict(chst_headers_l)
+
+	def get_changeset_detailes(self, changeset_id) -> DataFrame:
+		api_url = OSM_API_URL_BASE + "changeset/" + changeset_id + "/download"
+		r = requests.get(api_url)
+		if r.status_code == requests.codes.ok:
+			return self._parse_xml_cgangeset_data_to_df(xml_data=r)
+
+	def _parse_xml_cgangeset_data_to_df(self, xml_data: Response) -> DataFrame:
+		parser = XMLParser()
+		parser.feed(xml_data.text)
+		xml_root = parser.close()
+		chst_data_l = []
+		for l_action in xml_root:
+			action = l_action.tag
+			for l_elem_type in l_action:
+				elem_type = l_elem_type.tag
+				elem_id = l_elem_type.get('id')
+				chst_id = l_elem_type.get('changeset')
+				k = str()
+				v = str()
+				for l_tag in l_elem_type.iter('tag'):
+					k = l_tag.get('k')
+					v = l_tag.get('v')
+					chst_data_l.append({
+						'changeset_id': chst_id,
+						'action': action,
+						'elem_type': elem_type,
+						'elem_id': elem_id,
+						'k': k,
+						'v': v,
+					})
+		return DataFrame.from_dict(chst_data_l)
