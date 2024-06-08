@@ -9,23 +9,37 @@ from pandas import DataFrame
 OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6/"
 
 class OsmPublicApi(ConfigurableResource):
+	"""Dagster resource definition for OSM Public API at
+	https://api.openstreetmap.org/api/0.6/"""
 
 	def get_closed_changesets_by_bbox(self, min_lon, min_lat, max_lon, max_lat) -> DataFrame:
+		"""Returns pandas DataFrame with changeset header info at given coordinates of a bounding box
+
+		min_lon (left) - is the longitude of the left (westernmost) side of the bounding box
+		min_lat (bottom) - is the latitude of the bottom (southernmost) side of the bounding box
+		max_lon (right) - is the longitude of the right (easternmost) side of the bounding box
+		max_lat (top) - is the latitude of the top (northernmost) side of the bounding box
+		"""
+
 		api_url = OSM_API_URL_BASE + "changesets"
 		bbox_str = "{},{},{},{}".format(min_lon, min_lat, max_lon, max_lat)
 		api_params = {'bbox': bbox_str, 'closed': 'true'}
 		r = requests.get(api_url, params=api_params)
 		if r.status_code == requests.codes.ok:
 			return self._parse_xml_changeset_headers_to_df(xml_data=r)
-	
+
+
 	def _parse_xml_changeset_headers_to_df(self, xml_data: Response) -> DataFrame:
+		"""Helper function for 'get_closed_changesets_by_bbox'
+		to parse API xml output into pandas Dataframe"""
+
 		parser = XMLParser()
 		parser.feed(xml_data.text)
 		xml_root = parser.close()
 		chst_headers_l = []
 		for l_changeset in xml_root.findall('changeset'):
-			comment = str()
-			source = str()
+			comment = str()		# comment and source are optional fields
+			source = str()		# so we use empty strings as placeholdres
 			for l_tag in l_changeset.iter('tag'):
 				if l_tag.get('k') == 'comment':
 					comment = l_tag.get('v')
@@ -40,13 +54,20 @@ class OsmPublicApi(ConfigurableResource):
 			})
 		return DataFrame.from_dict(chst_headers_l)
 
-	def get_changeset_detailes(self, changeset_id) -> DataFrame:
+
+	def get_changeset_data(self, changeset_id) -> DataFrame:
+		"""Returns pandas DataFrame with changeset data by changeset_id"""
+
 		api_url = OSM_API_URL_BASE + "changeset/" + changeset_id + "/download"
 		r = requests.get(api_url)
 		if r.status_code == requests.codes.ok:
 			return self._parse_xml_cgangeset_data_to_df(xml_data=r)
 
+
 	def _parse_xml_cgangeset_data_to_df(self, xml_data: Response) -> DataFrame:
+		"""Helper function for 'get_changeset_data'
+		to parse API xml output into pandas Dataframe"""
+
 		parser = XMLParser()
 		parser.feed(xml_data.text)
 		xml_root = parser.close()
@@ -57,8 +78,8 @@ class OsmPublicApi(ConfigurableResource):
 				elem_type = l_elem_type.tag
 				elem_id = l_elem_type.get('id')
 				chst_id = l_elem_type.get('changeset')
-				k = str()
-				v = str()
+				k = str()		# All attributes of an element are stored
+				v = str()		# as list of key-value pairs
 				for l_tag in l_elem_type.iter('tag'):
 					k = l_tag.get('k')
 					v = l_tag.get('v')

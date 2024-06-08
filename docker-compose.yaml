@@ -1,4 +1,5 @@
 services:
+  
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
   # and event log storage.
   dagster_db:
