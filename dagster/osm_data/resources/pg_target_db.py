@@ -1,38 +1,45 @@
-from dagster import ConfigurableResource, EnvVar
+from dagster import ConfigurableResource
 
 import psycopg2
 
 class PostgresTargetDB(ConfigurableResource):
 	"""Dagster resource definition for target Postgres database"""
 
-	def _connect(self):
+	dbname: str
+	username: str
+	password: str
+	host: str
+	port: int
+
+	def connect(self):
 		"""Connect to database"""
 
 		return psycopg2.connect(
-			dbname = EnvVar('TARGET_DB_NAME'),
-			user = EnvVar('TARGET_DB_USER'),
-			password = EnvVar('TARGET_DB_PASSWORD'),
-			host = 'osm_data_db',
-			port = 5432
+			dbname = self.dbname,
+			user = self.username,
+			password = self.password,
+			host = self.host,
+			port = self.port
 		)
 
 
 	def execute_statement(self, sql_string) -> None:
 		"""General method for executing SQL statements"""
-		conn = self._connect
-		cur = conn.cursor()
-		cur.execute(sql_string)
-		conn.commit()
-		cur.close()
-		conn.close()
+		
+		conn = self.connect
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(sql_string)
+		finally:
+			conn.close()
 
 	def bulk_insert(self, sql_string, data) -> None:
 		"""Wrapper for psycopg2.extras.execute_values"""
 
 		conn = self._connect
-		cur = conn.cursor()
-		psycopg2.extras.execute_values(cur, sql_string, data, 
-			template=None, page_size=100, fetch=False)
-		conn.commit()
-		cur.close()
-		conn.close()
+		try:
+			with conn.cursor() as cursor:
+				psycopg2.extras.execute_values(cursor, sql_string, data, 
+					template=None, page_size=100, fetch=False)
+		finally:
+			conn.close()

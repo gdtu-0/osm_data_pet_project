@@ -25,7 +25,9 @@ class OsmPublicApi(ConfigurableResource):
 		bbox_str = "{},{},{},{}".format(min_lon, min_lat, max_lon, max_lat)
 		api_params = {'bbox': bbox_str, 'closed': 'true'}
 		r = requests.get(api_url, params=api_params)
-		if r.status_code == requests.codes.ok:
+		if r.status_code != requests.codes.ok:
+			raise Exception('No connection to OSM Api')
+		else:
 			return self._parse_xml_changeset_headers_to_df(xml_data=r)
 
 
@@ -60,7 +62,9 @@ class OsmPublicApi(ConfigurableResource):
 
 		api_url = OSM_API_URL_BASE + "changeset/" + changeset_id + "/download"
 		r = requests.get(api_url)
-		if r.status_code == requests.codes.ok:
+		if r.status_code != requests.codes.ok:
+			raise Exception('No connection to OSM Api')
+		else:
 			return self._parse_xml_cgangeset_data_to_df(xml_data=r)
 
 
