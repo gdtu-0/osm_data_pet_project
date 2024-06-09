@@ -23,6 +23,47 @@ class PostgresTargetDB(ConfigurableResource):
 		)
 
 
+	def table_exists(self, table_name: str) -> bool:
+		"""Check if table exists in database"""
+
+		sql_str = '''
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables
+				WHERE table_name = \'{table_name}\'
+		)
+		'''.format(table_name = table_name)
+
+		exists = False
+		conn = self.connect()
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(sql_str)
+				exists = cursor.fetchone()[0]
+		finally:
+			conn.close()
+		return(exists)
+
+
+	def table_lines(self, table_name:str) -> int:
+		"""Get number of table lines"""
+
+		sql_str = """
+		SELECT COUNT(*) FROM {table_name}
+		""".format(table_name = table_name)
+
+		num_lines = 0
+		conn = self.connect()
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(sql_str)
+				num_lines = cursor.fetchone()[0]
+		finally:
+			conn.close()
+		return(num_lines)
+
+
+# --- DEPRECATED ---
+
 	def execute_statement(self, sql_string) -> None:
 		"""General method for executing SQL statements"""
 		
@@ -32,6 +73,7 @@ class PostgresTargetDB(ConfigurableResource):
 				cursor.execute(sql_string)
 		finally:
 			conn.close()
+
 
 	def bulk_insert(self, sql_string, data) -> None:
 		"""Wrapper for psycopg2.extras.execute_values"""
