@@ -1,5 +1,6 @@
 from dagster import ConfigurableResource
 
+import functools
 import psycopg2
 
 class PostgresTargetDB(ConfigurableResource):
@@ -23,7 +24,22 @@ class PostgresTargetDB(ConfigurableResource):
 		)
 
 
-	def table_exists(self, table_name: str) -> bool:
+	def handle_connection(function):
+		"""Wrapper for handling connection"""
+
+		@functools.wraps(function)
+		def wrapper_handle_connection(self, *args, **kwargs):
+			connection = self.connect()
+			try:
+				value = function(self, connection, *args, **kwargs)
+			finally:
+				connection.close()
+			return(value)
+		return wrapper_handle_connection
+
+
+	@handle_connection
+	def table_exists(self, connection, table_name: str) -> bool:
 		"""Check if table exists in database"""
 
 		sql_str = '''
@@ -34,17 +50,14 @@ class PostgresTargetDB(ConfigurableResource):
 		'''.format(table_name = table_name)
 
 		exists = False
-		conn = self.connect()
-		try:
-			with conn.cursor() as cursor:
-				cursor.execute(sql_str)
-				exists = cursor.fetchone()[0]
-		finally:
-			conn.close()
-		return(exists)
+		with connection.cursor() as cursor:
+			cursor.execute(sql_str)
+			exists = cursor.fetchone()[0]
+		return(exists)		
 
 
-	def table_lines(self, table_name:str) -> int:
+	@handle_connection
+	def table_lines(self, connection, table_name:str) -> int:
 		"""Get number of table lines"""
 
 		sql_str = """
@@ -52,36 +65,46 @@ class PostgresTargetDB(ConfigurableResource):
 		""".format(table_name = table_name)
 
 		num_lines = 0
-		conn = self.connect()
-		try:
-			with conn.cursor() as cursor:
-				cursor.execute(sql_str)
-				num_lines = cursor.fetchone()[0]
-		finally:
-			conn.close()
+		with connection.cursor() as cursor:
+			cursor.execute(sql_str)
+			num_lines = cursor.fetchone()[0]
 		return(num_lines)
 
 
-# --- DEPRECATED ---
+	@handle_connection
+	def create_table(self, connection, table_name:str, columns:list) -> str:
+		"""Create table"""
 
-	def execute_statement(self, sql_string) -> None:
-		"""General method for executing SQL statements"""
-		
-		conn = self.connect
-		try:
-			with conn.cursor() as cursor:
-				cursor.execute(sql_string)
-		finally:
-			conn.close()
+		columns_str = ",\n\t".join(f'{name} {specs}' for name, specs in columns.items())
+		sql_str = "CREATE TABLE {table_name} (\n\t{columns_str}\n)".format(
+			table_name = table_name,
+			columns_str = columns_str)
+		with connection.cursor() as cursor:
+			cursor.execute(sql_str)
+			connection.commit()
+		return(sql_str)
 
 
-	def bulk_insert(self, sql_string, data) -> None:
-		"""Wrapper for psycopg2.extras.execute_values"""
+	@handle_connection
+	def insert_into_table(self, connection, table_name:str, columns:list, values: list):
+		"""Insert values into table"""
 
-		conn = self._connect
-		try:
-			with conn.cursor() as cursor:
-				psycopg2.extras.execute_values(cursor, sql_string, data, 
-					template=None, page_size=100, fetch=False)
-		finally:
-			conn.close()
+		columns_str = ", ".join(name for name in columns)
+		sql_str = "INSERT INTO {table_name}\n\t({columns_str})\n\t VALUES %s".format(
+			table_name = table_name,
+			columns_str = columns_str)
+		with connection.cursor() as cursor:
+			psycopg2.extras.execute_values (
+				cursor, sql_str, values, template=None, page_size=100)
+			connection.commit()
+
+
+	@handle_connection
+	def truncate_table(self, connection, table_name:str):
+		"""Truncate table"""
+
+		sql_str = "TRUNCATE TABLE {table_name}".format(
+			table_name = table_name)
+		with connection.cursor() as cursor:
+			cursor.execute(sql_str)
+			connection.commit()
