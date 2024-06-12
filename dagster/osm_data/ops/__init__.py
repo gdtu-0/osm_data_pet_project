@@ -2,6 +2,7 @@
 CITY_COORDINATES_TBL = {
 	'name': 'osm_city_coordinates',
 	'columns': {
+		"index":	"integer NOT NULL",
 		"city":		"varchar NOT NULL",
 		"min_lon":	"numeric NOT NULL",
 		"min_lat":	"numeric NOT NULL",
@@ -10,7 +11,8 @@ CITY_COORDINATES_TBL = {
 	},
 	# Cities coordinates (insert new cities here)
 	'initial_values': [
-		('St.Petersburg', 29.65, 59.75, 30.65, 60.10),
+		(0, 'St.Petersburg',	29.65, 59.75, 30.65, 60.10),
+		(1, 'Moscow',			37.35, 55.56, 37.89, 55.91)
 	]
 }
 CHANGESET_HEADERS_TBL = {

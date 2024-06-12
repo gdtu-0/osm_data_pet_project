@@ -2,6 +2,7 @@ from dagster import ConfigurableResource
 
 import functools
 import psycopg2
+import psycopg2.extras
 
 class PostgresTargetDB(ConfigurableResource):
 	"""Dagster resource definition for target Postgres database"""
@@ -108,3 +109,20 @@ class PostgresTargetDB(ConfigurableResource):
 		with connection.cursor() as cursor:
 			cursor.execute(sql_str)
 			connection.commit()
+
+
+	@handle_connection
+	def select(self, connection, table_name:str, columns:list) -> list:			# TODO: A lot to be done here...
+		"""Select statement (very basic functionality)"""
+
+		columns_str = ",\n\t\t".join(name for name in columns)
+		sql_str = "SELECT\t\t{columns_str}\n\tFROM {table_name}\n;".format(
+			table_name = table_name,
+			columns_str = columns_str)
+		with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+			cursor.execute(sql_str)
+			responce = cursor.fetchall()
+			result = []
+			for row in responce:
+				result.append(dict(row))
+			return(result)

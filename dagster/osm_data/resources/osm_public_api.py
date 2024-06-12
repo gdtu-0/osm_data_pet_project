@@ -28,10 +28,10 @@ class OsmPublicApi(ConfigurableResource):
 		if r.status_code != requests.codes.ok:
 			raise Exception('No connection to OSM Api')
 		else:
-			return self._parse_xml_changeset_headers_to_df(xml_data=r)
+			return DataFrame.from_dict(self._parse_xml_changeset_headers(xml_data=r))
 
 
-	def _parse_xml_changeset_headers_to_df(self, xml_data: Response) -> DataFrame:
+	def _parse_xml_changeset_headers(self, xml_data: Response) -> list:
 		"""Helper function for 'get_closed_changesets_by_bbox'
 		to parse API xml output into pandas Dataframe"""
 
@@ -54,21 +54,24 @@ class OsmPublicApi(ConfigurableResource):
 				'comment': comment,
 				'source': source,
 			})
-		return DataFrame.from_dict(chst_headers_l)
+		return chst_headers_l
 
 
-	def get_changeset_data(self, changeset_id) -> DataFrame:
+	def get_changeset_data(self, changeset_ids) -> DataFrame:
 		"""Returns pandas DataFrame with changeset data by changeset_id"""
 
-		api_url = OSM_API_URL_BASE + "changeset/" + changeset_id + "/download"
-		r = requests.get(api_url)
-		if r.status_code != requests.codes.ok:
-			raise Exception('No connection to OSM Api')
-		else:
-			return self._parse_xml_cgangeset_data_to_df(xml_data=r)
+		changeset_data_l =[]
+		for changeset_id in changeset_ids:
+			api_url = OSM_API_URL_BASE + "changeset/" + changeset_id + "/download"
+			r = requests.get(api_url)
+			if r.status_code != requests.codes.ok:
+				raise Exception('No connection to OSM Api')
+			else:
+				changeset_data_l.extend(self._parse_xml_cgangeset_data(xml_data=r))
+		return DataFrame.from_dict(changeset_data_l)
 
 
-	def _parse_xml_cgangeset_data_to_df(self, xml_data: Response) -> DataFrame:
+	def _parse_xml_cgangeset_data(self, xml_data: Response) -> list:
 		"""Helper function for 'get_changeset_data'
 		to parse API xml output into pandas Dataframe"""
 
@@ -95,4 +98,4 @@ class OsmPublicApi(ConfigurableResource):
 						'k': k,
 						'v': v,
 					})
-		return DataFrame.from_dict(chst_data_l)
+		return chst_data_l
