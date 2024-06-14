@@ -1,11 +1,11 @@
-from dagster import op, graph, OpExecutionContext
+from dagster import op, OpExecutionContext
 from ..resources import PostgresTargetDB
 
 from . import TABLES_TO_MAINTAIN
 
-@op
-def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB):
-	"""This op checks if setup and staging tables were created in target database"""
+@op(out = None)
+def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> None:
+	"""Check if setup and staging tables were created in target database"""
 	
 	for table in TABLES_TO_MAINTAIN:
 		# Check if table exists and create of necessary
@@ -34,7 +34,3 @@ def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTarg
 					table_name = table['name'],
 					columns = table['columns'],
 					values = table['initial_values'])
-
-@graph
-def init_target_db_graph():
-	init_target_db()
