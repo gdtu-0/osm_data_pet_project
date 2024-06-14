@@ -36,6 +36,7 @@ services:
       - "3000:3000"
     volumes:
       - ./dagster/osm_data:/opt/dagster/app/osm_data
+      - ./dagster/dbt:/opt/dagster/app/dbt
     networks:
       - osm_data_pet_project_network
     depends_on:

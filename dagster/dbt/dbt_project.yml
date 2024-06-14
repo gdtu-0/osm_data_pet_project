@@ -1,0 +1,4 @@
+name: 'osm_data'
+profile: 'osm_data'
+
+model-paths: ["models"]
