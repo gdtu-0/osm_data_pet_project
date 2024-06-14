@@ -1,4 +1,17 @@
 name: 'osm_data'
 profile: 'osm_data'
 
+flags:
+  send_anonymous_usage_stats: False
+
 model-paths: ["models"]
+models:
+  osm_data:
+    materialized: table
+    staging:
+      materialized: view
+
+clean-targets:
+  - dbt_packages
+  - target
+  - logs

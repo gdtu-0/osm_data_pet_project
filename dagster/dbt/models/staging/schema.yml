@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: osm_staging_tables
+    schema: public
+    tables:
+      - name: osm_changeset_headers
+        identifier: osm_changeset_headers
+      - name: osm_changeset_data
+        identifier: osm_changeset_data
