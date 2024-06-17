@@ -1,5 +1,5 @@
 from dagster import asset, Output, MetadataValue
-from pandas import DataFrame
+from pandas import DataFrame # type: ignore
 
 @asset
 def cities_coordinates() -> DataFrame:

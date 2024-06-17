@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dagster import EnvVar
 
-from dagster_dbt import DbtCliResource
+from dagster_dbt import DbtCliResource # type: ignore
 from .osm_public_api import OsmPublicApi
 from .pg_target_db import PostgresTargetDB
 

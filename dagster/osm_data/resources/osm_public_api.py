@@ -4,7 +4,7 @@ import requests
 from requests import Response
 
 from xml.etree.ElementTree import XMLParser
-from pandas import DataFrame
+from pandas import DataFrame # type: ignore
 
 OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6/"
 
@@ -50,9 +50,14 @@ class OsmPublicApi(ConfigurableResource):
 			chst_headers_l.append({
 				'changeset_id':l_changeset.get('id'),
 				'closed_at': l_changeset.get('closed_at'),
+				'uid': l_changeset.get('uid'),
 				'username': l_changeset.get('user'),
 				'comment': comment,
 				'source': source,
+				'min_lat': l_changeset.get('min_lat'),
+				'min_lon': l_changeset.get('min_lon'),
+				'max_lat': l_changeset.get('max_lat'),
+				'max_lon': l_changeset.get('max_lon'),
 			})
 		return chst_headers_l
 

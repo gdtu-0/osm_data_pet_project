@@ -1,5 +1,5 @@
 from dagster import asset
-from pandas import DataFrame
+from pandas import DataFrame # type: ignore
 
 from ..resources import OsmPublicApi
 

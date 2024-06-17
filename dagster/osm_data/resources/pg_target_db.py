@@ -1,8 +1,8 @@
 from dagster import ConfigurableResource
 
 import functools
-import psycopg2
-import psycopg2.extras
+import psycopg2 # type: ignore
+import psycopg2.extras # type: ignore
 
 class PostgresTargetDB(ConfigurableResource):
 	"""Dagster resource definition for target Postgres database"""

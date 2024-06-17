@@ -1,5 +1,4 @@
 *__pycache__*
-dagster/dbt/logs
-dagster/dbt/target
-dagster/dbt/.user.yml
-dagster/dbt/dbt_dagster
+dbt/logs
+dbt/target
+dbt/.user.yml

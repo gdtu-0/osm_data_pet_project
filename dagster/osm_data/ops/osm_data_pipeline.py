@@ -1,7 +1,7 @@
 from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput, Nothing
 from ..resources import PostgresTargetDB, OsmPublicApi
 
-from pandas import DataFrame
+from pandas import DataFrame # type: ignore
 from typing import List, Dict, Tuple
 
 from datetime import datetime, timezone
@@ -43,6 +43,18 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
 		min_lon = location_spec['min_lon'], min_lat = location_spec['min_lat'],
 		max_lon = location_spec['max_lon'], max_lat = location_spec['max_lat'])
 	changeset_headers_df.insert(0, 'location_name', location_spec['location_name'])
+
+	# Drop changeset with too large areas (they are often scam or service changesets)
+	area_bias_coef = 1.1
+	bbox_area = (
+		(location_spec['max_lat'] - location_spec['min_lat']) *
+		(location_spec['min_lon'] - location_spec['max_lon']))
+	changeset_headers_df['changeset_area'] = (
+		(changeset_headers_df['max_lat'] - changeset_headers_df['min_lat']) *
+		(changeset_headers_df['max_lon'] - changeset_headers_df['min_lon']))
+	changeset_headers_df.drop(changeset_headers_df[changeset_headers_df['changeset_area'] > bbox_area * area_bias_coef].index, inplace=True)
+	changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis=1, inplace=True)
+
 	
 	# Get changeset data
 	changeset_data_df = OSM_Public_API.get_changeset_data(

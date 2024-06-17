@@ -1,5 +1,5 @@
 from dagster import AssetExecutionContext
-from dagster_dbt import DbtCliResource, dbt_assets
+from dagster_dbt import DbtCliResource, dbt_assets # type: ignore
 
 from ..resources import DBT_MANIFEST_PATH
 

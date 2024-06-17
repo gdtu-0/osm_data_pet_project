@@ -22,6 +22,7 @@ CHANGESET_HEADERS_TBL = {
 		"location_name":	"varchar NOT NULL",
 		'changeset_id':		"bigint NOT NULL",
 		'closed_at':		"timestamp with time zone NOT NULL",
+        'uid':				"int NOT NULL",
 		'username':			"varchar NOT NULL",
 		'comment':			"varchar",
 		'source':			"varchar"
