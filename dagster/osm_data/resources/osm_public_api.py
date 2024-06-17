@@ -54,10 +54,10 @@ class OsmPublicApi(ConfigurableResource):
 				'username': l_changeset.get('user'),
 				'comment': comment,
 				'source': source,
-				'min_lat': l_changeset.get('min_lat'),
-				'min_lon': l_changeset.get('min_lon'),
-				'max_lat': l_changeset.get('max_lat'),
-				'max_lon': l_changeset.get('max_lon'),
+				'min_lat': float(l_changeset.get('min_lat')),
+				'min_lon': float(l_changeset.get('min_lon')),
+				'max_lat': float(l_changeset.get('max_lat')),
+				'max_lon': float(l_changeset.get('max_lon')),
 			})
 		return chst_headers_l
 

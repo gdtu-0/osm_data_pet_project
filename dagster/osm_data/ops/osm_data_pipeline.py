@@ -33,7 +33,7 @@ def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: Po
 def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: dict) -> Tuple[DataFrame, DataFrame]:
 	"""Get changeset headers and data from API for location"""
 
-	context.log.info(f"{location_spec['index']}: Thread for location \'{location_spec['location_name']}\'\n" + 
+	context.log.info(	f"{location_spec['index']}: Thread for location \'{location_spec['location_name']}\'\n" + 
 						"BBox boundaries are:\n" +
 						f"   min_lon {location_spec['min_lon']}\tmin_lat {location_spec['min_lat']}\n" +
 						f"   max_lon {location_spec['max_lon']}\tmax_lat {location_spec['max_lat']}")
@@ -45,20 +45,26 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
 	changeset_headers_df.insert(0, 'location_name', location_spec['location_name'])
 
 	# Drop changeset with too large areas (they are often scam or service changesets)
-	area_bias_coef = 1.1
+	AREA_BIAS_COEF = 1.1
+	SCALE_FACTOR = 1000.0
 	bbox_area = (
-		(location_spec['max_lat'] - location_spec['min_lat']) *
-		(location_spec['min_lon'] - location_spec['max_lon']))
+		(float(location_spec['max_lat']) - float(location_spec['min_lat'])) *
+		(float(location_spec['max_lon']) - float(location_spec['min_lon'])) *
+		SCALE_FACTOR)
 	changeset_headers_df['changeset_area'] = (
 		(changeset_headers_df['max_lat'] - changeset_headers_df['min_lat']) *
-		(changeset_headers_df['max_lon'] - changeset_headers_df['min_lon']))
-	changeset_headers_df.drop(changeset_headers_df[changeset_headers_df['changeset_area'] > bbox_area * area_bias_coef].index, inplace=True)
-	changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis=1, inplace=True)
+		(changeset_headers_df['max_lon'] - changeset_headers_df['min_lon']) *
+		SCALE_FACTOR)
+	changeset_headers_df.drop(changeset_headers_df[changeset_headers_df['changeset_area'] > bbox_area * AREA_BIAS_COEF].index, inplace = True)
+	changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis = 1, inplace = True)
 
 	
 	# Get changeset data
 	changeset_data_df = OSM_Public_API.get_changeset_data(
 		changeset_ids = changeset_headers_df['changeset_id'].tolist())
+
+	context.log.info(	f"Changeset headers line count: {changeset_headers_df.shape[0]}\n" + 
+						f"Changeset data line count: {changeset_data_df.shape[0]}")
 
 	# Return dataframes
 	return(changeset_headers_df, changeset_data_df)
