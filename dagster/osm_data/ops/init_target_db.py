@@ -10,21 +10,17 @@ def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTarg
 	for table in TABLES_TO_MAINTAIN:
 		# Check if table exists and create of necessary
 		if not Postgres_Target_DB.table_exists(table['name']):
-			context.log.info("Table \'{table_name}\' is missing".format(
-				table_name = table['name']))
+			context.log.info(f"Table \'{table['name']}\' is missing")
 			# Create table
 			ddl = Postgres_Target_DB.create_table(
 				table_name = table['name'],
 				columns = table['columns'])
 			# Check
 			if not Postgres_Target_DB.table_exists(table['name']):
-				context.log.error("Table \'{table_name}\' was not created".format(
-					table_name = table['name']))
+				context.log.error(f"Table \'{table['name']}\' was not created")
 				raise Exception("An error occured")
 			else:
-				context.log.info("Table \'{table_name}\' was created with statement:\n{statement}".format(
-					table_name = table['name'],
-					statement = ddl))
+				context.log.info(f"Table \'{table['name']}\' was created with statement:\n\n{ddl}")
 
 		# Fill in default values if any
 		if table.get('initial_values', 'NO_KEY') != 'NO_KEY':
@@ -34,3 +30,4 @@ def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTarg
 					table_name = table['name'],
 					columns = table['columns'],
 					values = table['initial_values'])
+				context.log.info(f"Setup table \'{table['name']}\' initial values updated")

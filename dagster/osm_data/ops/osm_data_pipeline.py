@@ -26,7 +26,7 @@ def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: Po
 
 	# Yield dynamic output
 	for row in location_coordinates:
-		yield DynamicOutput(row, mapping_key=f"location_spec_{row['index']}")
+		yield DynamicOutput(row, mapping_key = f"location_spec_{row['index']}")
 
 
 @op(out = {"changeset_headers": Out(), "changeset_data": Out()})
@@ -42,6 +42,7 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
 	changeset_headers_df = OSM_Public_API.get_closed_changesets_by_bbox(
 		min_lon = location_spec['min_lon'], min_lat = location_spec['min_lat'],
 		max_lon = location_spec['max_lon'], max_lat = location_spec['max_lat'])
+	# Add location name
 	changeset_headers_df.insert(0, 'location_name', location_spec['location_name'])
 
 	# Drop changeset with too large areas (they are often scam or service changesets)
@@ -55,7 +56,9 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
 		(changeset_headers_df['max_lat'] - changeset_headers_df['min_lat']) *
 		(changeset_headers_df['max_lon'] - changeset_headers_df['min_lon']) *
 		SCALE_FACTOR)
+	# Drop irrelevant changesets
 	changeset_headers_df.drop(changeset_headers_df[changeset_headers_df['changeset_area'] > bbox_area * AREA_BIAS_COEF].index, inplace = True)
+	# Remove helper columns from dataframe
 	changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis = 1, inplace = True)
 
 	
@@ -75,6 +78,7 @@ def collect_and_store_results(context: OpExecutionContext, Postgres_Target_DB: P
 		changeset_headers_fan_in: List[DataFrame], changeset_data_fan_in: List[DataFrame]) -> None:
 	"""Collect data and save to DB"""
 
+	# Add load timestamp to data
 	load_timestamp = datetime.now(timezone.utc)
 
 	# Save changeset headers

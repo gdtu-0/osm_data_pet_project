@@ -1,4 +1,5 @@
 # Table definitions
+
 LOCATION_COORDINATES_TBL = {
 	'name': 'osm_location_coordinates',
 	'columns': {

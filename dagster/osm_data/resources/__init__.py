@@ -17,14 +17,14 @@ PROJECT_RESOURCES = {
 		password = EnvVar('TARGET_DB_PASSWORD'),
 		host = 'osm_data_db',
 		port = 5432),
-	"dbt": DbtCliResource(project_dir=os.fspath(DBT_PROJECT_DIR))
+	"dbt": DbtCliResource(project_dir = os.fspath(DBT_PROJECT_DIR)),
 }
 
 # This macro updates dbt manifest file and returns it's path
 DBT_MANIFEST_PATH = (
 	PROJECT_RESOURCES['dbt'].cli(
 		["--quiet", "parse"],
-		target_path=Path("target"),
+		target_path = Path("target"),
 	)
 	.wait()
 	.target_path.joinpath("manifest.json")

@@ -43,12 +43,7 @@ class PostgresTargetDB(ConfigurableResource):
 	def table_exists(self, connection, table_name: str) -> bool:
 		"""Check if table exists in database"""
 
-		sql_str = '''
-		SELECT EXISTS (
-			SELECT FROM information_schema.tables
-				WHERE table_name = \'{table_name}\'
-		)
-		'''.format(table_name = table_name)
+		sql_str = f"SELECT EXISTS (\n\tSELECT FROM information_schema.tables\n\t\tWHERE table_name = \'{table_name}\'\n)"
 
 		exists = False
 		with connection.cursor() as cursor:
@@ -61,10 +56,7 @@ class PostgresTargetDB(ConfigurableResource):
 	def table_lines(self, connection, table_name:str) -> int:
 		"""Get number of table lines"""
 
-		sql_str = """
-		SELECT COUNT(*) FROM {table_name}
-		""".format(table_name = table_name)
-
+		sql_str = f"SELECT COUNT(*) FROM {table_name}"
 		num_lines = 0
 		with connection.cursor() as cursor:
 			cursor.execute(sql_str)
@@ -77,9 +69,7 @@ class PostgresTargetDB(ConfigurableResource):
 		"""Create table"""
 
 		columns_str = ",\n\t".join(f'{name} {specs}' for name, specs in columns.items())
-		sql_str = "CREATE TABLE {table_name} (\n\t{columns_str}\n)".format(
-			table_name = table_name,
-			columns_str = columns_str)
+		sql_str = f"CREATE TABLE {table_name} (\n\t{columns_str}\n)"
 		with connection.cursor() as cursor:
 			cursor.execute(sql_str)
 			connection.commit()
@@ -91,9 +81,7 @@ class PostgresTargetDB(ConfigurableResource):
 		"""Insert values into table"""
 
 		columns_str = ", ".join(name for name in columns)
-		sql_str = "INSERT INTO {table_name}\n\t({columns_str})\n\t VALUES %s".format(
-			table_name = table_name,
-			columns_str = columns_str)
+		sql_str = f"INSERT INTO {table_name}\n\t({columns_str})\n\t VALUES %s"
 		with connection.cursor() as cursor:
 			psycopg2.extras.execute_values (
 				cursor, sql_str, values, template=None, page_size=100)
@@ -104,8 +92,7 @@ class PostgresTargetDB(ConfigurableResource):
 	def truncate_table(self, connection, table_name:str):
 		"""Truncate table"""
 
-		sql_str = "TRUNCATE TABLE {table_name}".format(
-			table_name = table_name)
+		sql_str = f"TRUNCATE TABLE {table_name}"
 		with connection.cursor() as cursor:
 			cursor.execute(sql_str)
 			connection.commit()
@@ -116,9 +103,7 @@ class PostgresTargetDB(ConfigurableResource):
 		"""Select statement (very basic functionality)"""
 
 		columns_str = ",\n\t\t".join(name for name in columns)
-		sql_str = "SELECT\t\t{columns_str}\n\tFROM {table_name}\n;".format(
-			table_name = table_name,
-			columns_str = columns_str)
+		sql_str = f"SELECT\t\t{columns_str}\n\tFROM {table_name}\n;"
 		with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
 			cursor.execute(sql_str)
 			responce = cursor.fetchall()

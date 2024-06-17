@@ -6,7 +6,7 @@ from requests import Response
 from xml.etree.ElementTree import XMLParser
 from pandas import DataFrame # type: ignore
 
-OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6/"
+OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6"
 
 class OsmPublicApi(ConfigurableResource):
 	"""Dagster resource definition for OSM Public API at
@@ -21,14 +21,14 @@ class OsmPublicApi(ConfigurableResource):
 		max_lat (top) - is the latitude of the top (northernmost) side of the bounding box
 		"""
 
-		api_url = OSM_API_URL_BASE + "changesets"
-		bbox_str = "{},{},{},{}".format(min_lon, min_lat, max_lon, max_lat)
+		api_url = f"{OSM_API_URL_BASE}/changesets"
+		bbox_str = f"{min_lon},{min_lat},{max_lon},{max_lat}"
 		api_params = {'bbox': bbox_str, 'closed': 'true'}
-		r = requests.get(api_url, params=api_params)
+		r = requests.get(api_url, params = api_params)
 		if r.status_code != requests.codes.ok:
 			raise Exception('No connection to OSM Api')
 		else:
-			return DataFrame.from_dict(self._parse_xml_changeset_headers(xml_data=r))
+			return DataFrame.from_dict(self._parse_xml_changeset_headers(xml_data = r))
 
 
 	def _parse_xml_changeset_headers(self, xml_data: Response) -> list:
@@ -67,12 +67,12 @@ class OsmPublicApi(ConfigurableResource):
 
 		changeset_data_l =[]
 		for changeset_id in changeset_ids:
-			api_url = OSM_API_URL_BASE + "changeset/" + changeset_id + "/download"
+			api_url = f"{OSM_API_URL_BASE}/changeset/{changeset_id}/download"
 			r = requests.get(api_url)
 			if r.status_code != requests.codes.ok:
 				raise Exception('No connection to OSM Api')
 			else:
-				changeset_data_l.extend(self._parse_xml_cgangeset_data(xml_data=r))
+				changeset_data_l.extend(self._parse_xml_cgangeset_data(xml_data = r))
 		return DataFrame.from_dict(changeset_data_l)
 
 
