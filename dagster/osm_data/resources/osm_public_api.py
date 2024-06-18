@@ -50,8 +50,8 @@ class OsmPublicApi(ConfigurableResource):
 			chst_headers_l.append({
 				'changeset_id':l_changeset.get('id'),
 				'closed_at': l_changeset.get('closed_at'),
-				'uid': l_changeset.get('uid'),
-				'username': l_changeset.get('user'),
+				'u_uid': l_changeset.get('uid'),
+				'u_username': l_changeset.get('user'),
 				'comment': comment,
 				'source': source,
 				'min_lat': float(l_changeset.get('min_lat')),

@@ -2,7 +2,7 @@ with changesets_ordered as (
     select	load_timestamp,
 			changeset_id,
 			closed_at,
-			uid,
+			u_uid,
 			comment,
 			source,
 			row_number() over (
@@ -14,7 +14,7 @@ with changesets_ordered as (
 
 select	changeset_id,
 		closed_at,
-		uid,
+		u_uid,
 		comment,
 		source
 	from changesets_ordered

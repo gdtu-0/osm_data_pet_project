@@ -10,8 +10,8 @@ select	load_timestamp,
 		location_name,
 		changeset_id,
 		closed_at,
-		uid,
-		username,
+		u_uid,
+		u_username,
 		comment,
 		source
 	from {{ source('osm_staging_tables', 'osm_changeset_headers') }}

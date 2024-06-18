@@ -13,8 +13,8 @@ sources:
           - name: location_name
           - name: changeset_id
           - name: closed_at
-          - name: uid
-          - name: username
+          - name: u_uid
+          - name: u_username
           - name: comment
           - name: source
       # osm_changeset_data
@@ -58,12 +58,12 @@ models:
         data_type: timestamp with timezone
         tests:
           - not_null
-      - name: uid
+      - name: u_uid
         description: User's UID
         data_type: int
         tests:
           - not_null
-      - name: username
+      - name: u_username
         description: Username
         data_type: string
         tests:
