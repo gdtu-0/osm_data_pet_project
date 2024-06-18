@@ -4,7 +4,28 @@ sources:
   - name: osm_staging_tables
     schema: public
     tables:
+      # osm_changeset_headers
       - name: osm_changeset_headers
         identifier: osm_changeset_headers
+        description: OSM changeset headers table
+        columns:
+          - name: load_timestamp
+          - name: location_name
+          - name: changeset_id
+          - name: closed_at
+          - name: uid
+          - name: username
+          - name: comment
+          - name: source
+      # osm_changeset_data
       - name: osm_changeset_data
         identifier: osm_changeset_data
+        description: OSM changeset data table
+        columns:
+          - name: load_timestamp
+          - name: changeset_id
+          - name: action
+          - name: elem_type
+          - name: elem_id
+          - name: k
+          - name: v
