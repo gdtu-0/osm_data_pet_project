@@ -8,7 +8,7 @@ osm_data_pipeline_job = osm_data_pipeline_graph.to_job(name = 'osm_data_pipeline
 # OSM Data pipeline schedule
 osm_data_pipeline_schedule = ScheduleDefinition(
     job = osm_data_pipeline_job,
-    cron_schedule = "*/30 * * * *"
+    cron_schedule = "*/15 * * * *"
 )
 
 # List of all jobs
