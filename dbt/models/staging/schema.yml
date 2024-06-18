@@ -29,3 +29,97 @@ sources:
           - name: elem_id
           - name: k
           - name: v
+
+models:
+  # stg_osm_changeset_headers
+  - name: stg_osm_changeset_headers
+    description: Staging table for OSM changeset headers
+    config:
+      tags:
+        - staging
+    columns:
+      - name: load_timestamp
+        description: Record loaad timestamp
+        data_type: timestamp with timezone
+        tests:
+          - not_null
+      - name: location_name
+        description: Location name
+        data_type: string
+        tests:
+          - not_null
+      - name: changeset_id
+        description: Changeset ID
+        data_type: bigint
+        tests:
+          - not_null
+      - name: closed_at
+        description: Changeset commit timestamp
+        data_type: timestamp with timezone
+        tests:
+          - not_null
+      - name: uid
+        description: User's UID
+        data_type: int
+        tests:
+          - not_null
+      - name: username
+        description: Username
+        data_type: string
+        tests:
+          - not_null
+      - name: comment
+        description: Changeset comment
+        data_type: string
+        tests:
+          - not_null
+      - name: source
+        description: Changeset source or imagery used
+        data_type: string
+        tests:
+          - not_null
+  # stg_osm_changeset_data
+  - name: stg_osm_changeset_data
+    description: Staging table for OSM changeset data
+    config:
+      tags:
+        - staging
+    columns:
+      - name: load_timestamp
+        description: Record loaad timestamp
+        data_type: timestamp with timezone
+        tests:
+          - not_null
+      - name: changeset_id
+        description: Changeset ID
+        data_type: bigint
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_osm_changeset_headers')
+              field: changeset_id
+      - name: action
+        description: Action (create / modify / delete)
+        data_type: string
+        tests:
+          - not_null
+      - name: elem_type
+        description: Changeset type (node / way / relation)
+        data_type: string
+        tests:
+          - not_null
+      - name: elem_id
+        description: Element ID
+        data_type: int
+        tests:
+          - not_null
+      - name: k
+        description: Key part of key/value pair
+        data_type: string
+        tests:
+          - not_null
+      - name: v
+        description: Value part of key/value pair
+        data_type: string
+        tests:
+          - not_null
