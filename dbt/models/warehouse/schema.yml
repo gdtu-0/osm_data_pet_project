@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  # dds_osm_changesets
+  - name: dds_osm_changesets
+    description: OSM changesets
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: changeset_id
+        description: Changeset ID
+        data_type: bigint
+        tests:
+          - not_null
+          - unique
+      - name: closed_at
+        description: Changeset commit timestamp
+        data_type: timestamp with timezone
+        tests:
+          - not_null
+      - name: uid
+        description: User's UID
+        data_type: int
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dds_osm_users')
+              field: uid
+      - name: comment
+        description: Changeset comment
+        data_type: string
+        tests:
+          - not_null
+      - name: source
+        description: Changeset source or imagery used
+        data_type: string
+        tests:
+          - not_null
+  # dds_osm_users
+  - name: dds_osm_users
+    description: OSM users
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: uid
+        description: User's UID
+        data_type: int
+        tests:
+          - not_null
+          - unique
+      - name: username
+        description: Username
+        data_type: string
+        tests:
+          - not_null

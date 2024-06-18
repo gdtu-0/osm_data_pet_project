@@ -14,7 +14,7 @@ select	load_timestamp,
 		username,
 		comment,
 		source
-	from {{ source ('osm_staging_tables', 'osm_changeset_headers') }}
+	from {{ source('osm_staging_tables', 'osm_changeset_headers') }}
 {% if is_incremental() %}
 	where load_timestamp > (select coalesce(max(load_timestamp), TO_TIMESTAMP('2000-01-01 00:00:00','YYYY-MM-DD HH:MI:SS')) from {{ this }})
 {% endif %}
