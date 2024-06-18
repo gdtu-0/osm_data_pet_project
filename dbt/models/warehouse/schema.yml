@@ -37,6 +37,29 @@ models:
         data_type: string
         tests:
           - not_null
+  # dds_osm_elements
+  - name: dds_osm_elements
+    description: OSM elements
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: elem_id
+        description: Element ID
+        data_type: int
+        tests:
+          - not_null
+          - unique
+      - name: elem_type
+        description: Changeset type (node / way / relation)
+        data_type: string
+        tests:
+          - not_null      
+      - name: last_action
+        description: Last action (create / modify / delete) performed on element
+        data_type: string
+        tests:
+          - not_null
   # dds_osm_users
   - name: dds_osm_users
     description: OSM users
