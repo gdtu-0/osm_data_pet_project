@@ -8,6 +8,8 @@ sources:
       - name: osm_changeset_headers
         identifier: osm_changeset_headers
         description: OSM changeset headers table
+        tags:
+          - sources
         columns:
           - name: load_timestamp
           - name: location_name
@@ -21,6 +23,8 @@ sources:
       - name: osm_changeset_data
         identifier: osm_changeset_data
         description: OSM changeset data table
+        tags:
+          - sources
         columns:
           - name: load_timestamp
           - name: changeset_id
