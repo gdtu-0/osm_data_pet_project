@@ -21,7 +21,7 @@ models:
           - not_null
       - name: u_uid
         description: User's UID
-        data_type: int
+        data_type: bigint
         tests:
           - not_null
           - relationships:
@@ -37,6 +37,20 @@ models:
         data_type: string
         tests:
           - not_null
+      - name: location_name
+        description: Location name
+        data_type: string
+        tests:
+          - not_null
+      - name: create_counter
+        description: Counter for create operations (distinct element IDs)
+        data_type: int
+      - name: modify_counter
+        description: Counter for modify operations (distinct element IDs)
+        data_type: int
+      - name: delete_counter
+        description: Counter for delete operations (distinct element IDs)
+        data_type: int
   # dds_osm_elements
   - name: dds_osm_elements
     description: OSM elements
@@ -46,7 +60,7 @@ models:
     columns:
       - name: elem_id
         description: Element ID
-        data_type: int
+        data_type: bigint
         tests:
           - not_null
           - unique
@@ -54,9 +68,44 @@ models:
         description: Changeset type (node / way / relation)
         data_type: string
         tests:
-          - not_null      
+          - not_null
+      - name: location_name
+        description: Location name
+        data_type: string
+        tests:
+          - not_null
       - name: last_action
         description: Last action (create / modify / delete) performed on element
+        data_type: string
+        tests:
+          - not_null
+      - name: last_changeset_id
+        description: Ref to last changeset with this element
+        data_type: bigint
+        tests:
+          - not_null
+  # dds_osm_element_tags
+  - name: dds_osm_element_tags
+    description: OSM element tags
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: elem_id
+        description: Element ID
+        data_type: bigint
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dds_osm_elements')
+              field: elem_id
+      - name: k
+        description: Key part of key/value pair
+        data_type: string
+        tests:
+          - not_null
+      - name: v
+        description: Value part of key/value pair
         data_type: string
         tests:
           - not_null
@@ -69,7 +118,7 @@ models:
     columns:
       - name: u_uid
         description: User's UID
-        data_type: int
+        data_type: bigint
         tests:
           - not_null
           - unique

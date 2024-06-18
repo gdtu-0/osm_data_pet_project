@@ -60,7 +60,7 @@ models:
           - not_null
       - name: u_uid
         description: User's UID
-        data_type: int
+        data_type: bigint
         tests:
           - not_null
       - name: u_username
@@ -110,7 +110,7 @@ models:
           - not_null
       - name: elem_id
         description: Element ID
-        data_type: int
+        data_type: bigint
         tests:
           - not_null
       - name: k
