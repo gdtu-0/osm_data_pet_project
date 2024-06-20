@@ -15,14 +15,7 @@ LOCATION_COORDINATES_TBL = {
         "min_lat":          "numeric NOT NULL",
         "max_lon":          "numeric NOT NULL",
         "max_lat":          "numeric NOT NULL",
-    },
-    # Cities coordinates (insert new cities here)
-    'initial_values': [
-        (0, 'St.Petersburg',    30.1245, 59.8086, 30.5653, 60.0926),
-        (1, 'Moscow',           37.3260, 55.5752, 37.8754, 55.9207),
-        (2, 'Yekaterinburg',    60.4866, 56.7365, 60.7139, 56.9191),
-        # (0, 'FOR_TESTING',      0, 0, 0, 0),
-    ],
+    }
 }
 
 LOCATION_LOAD_STATS = {

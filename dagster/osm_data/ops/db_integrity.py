@@ -23,7 +23,7 @@ def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: Postg
             context.log.info(f"Table \'{table['name']}\' was created with statement:\n\n{ddl}")
 
     # Fill in initial locations if necessary
-    for location_spec in INITIAL_LOCATIONS:
+    for index, location_spec in INITIAL_LOCATIONS.items():
         # Read location table from DB
         where_cond = [f"location_name = \'{location_spec.location_name}\'"]
         res = Postgres_Target_DB.select_from_table(
@@ -46,7 +46,7 @@ def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: Postg
                 continue
         # If we got here then either row was missing or values were not equal
         # Insert(replace) new record
-        val = (0, location_spec.location_name, location_spec.min_lon, location_spec.min_lat,
+        val = (index, location_spec.location_name, location_spec.min_lon, location_spec.min_lat,
                location_spec.max_lon, location_spec.max_lat)
         print(val)
         Postgres_Target_DB.delete_from_table(

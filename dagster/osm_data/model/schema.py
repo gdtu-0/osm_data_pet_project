@@ -34,7 +34,7 @@ class LocationSpec:
 
 @dataclass
 class Table:
-    """Database tablse"""
+    """Database table"""
 
     name: str   # Database table name
     column_specs: Dict  # Dict structure of table fields where key is a field name
