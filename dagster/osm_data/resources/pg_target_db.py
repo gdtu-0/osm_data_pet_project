@@ -9,11 +9,11 @@ from typing import Optional, List
 class PostgresTargetDB(ConfigurableResource):
     """Dagster resource definition for target Postgres database"""
 
-    dbname: str
-    username: str
-    password: str
-    host: str
-    port: int
+    dbname:str
+    username:str
+    password:str
+    host:str
+    port:int
 
     def connect(self):
         """Connect to database"""
@@ -42,7 +42,7 @@ class PostgresTargetDB(ConfigurableResource):
 
 
     @handle_connection
-    def table_exists(self, connection, table_name: str) -> bool:
+    def table_exists(self, connection, table_name:str) -> bool:
         """Check if table exists in database"""
 
         sql_str = f"SELECT EXISTS (\n\tSELECT FROM information_schema.tables\n\t\tWHERE table_name = \'{table_name}\'\n)"
@@ -79,7 +79,7 @@ class PostgresTargetDB(ConfigurableResource):
 
 
     @handle_connection
-    def insert_into_table(self, connection, table_name:str, columns:list, values: list):
+    def insert_into_table(self, connection, table_name:str, columns:list, values:list):
         """Insert values into table"""
 
         columns_str = ", ".join(name for name in columns)
@@ -128,6 +128,18 @@ class PostgresTargetDB(ConfigurableResource):
 
         where_str = '\tWHERE ' + ",\n\t\tAND ".join(line for line in where)
         sql_str = f"DELETE FROM {table_name}\n{where_str}\n;"
+        with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(sql_str)
+            connection.commit()
+    
+
+    @handle_connection
+    def update_table(self, connection, table_name:str, set:List[str], where:List[str]):
+        """Update statement"""
+
+        set_str = '\tSET ' + ",\n\t\t".join(line for line in set)
+        where_str = '\tWHERE ' + ",\n\t\tAND ".join(line for line in where)
+        sql_str = f"UPDATE {table_name}\n{set_str}\n{where_str}\n;"
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute(sql_str)
             connection.commit()

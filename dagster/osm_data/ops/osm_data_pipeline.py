@@ -9,8 +9,32 @@ from datetime import datetime, timezone
 from .init_target_db import init_target_db
 
 from . import LOCATION_COORDINATES_TBL
+from . import LOCATION_LOAD_STATS
 from . import CHANGESET_HEADERS_TBL
 from . import CHANGESET_DATA_TBL
+
+def update_location_load_stats(location_name: str, Postgres_Target_DB: PostgresTargetDB):
+    """Update location load statistics"""
+
+    update_timestamp = datetime.now(timezone.utc)
+    set_str = f"update_timestamp = \'{update_timestamp}\'"
+    where_cond = f"location_name = \'{location_name}\'"         # TODO Refactor
+    res = Postgres_Target_DB.select_from_table(
+        table_name = LOCATION_LOAD_STATS['name'],
+        columns = LOCATION_LOAD_STATS['columns'],
+        where = [where_cond])
+    if not res:
+        # No records for this location, insert new one
+        Postgres_Target_DB.insert_into_table(
+            table_name = LOCATION_LOAD_STATS['name'],
+            columns = LOCATION_LOAD_STATS['columns'],
+            # 'location_name', 'update_timestamp', 'initial_load_required', 'initial_load_start_from_ts'
+            values = [(location_name, update_timestamp, True, None)])
+    else:
+        # Update timestamp
+        Postgres_Target_DB.update_table(
+            table_name = LOCATION_LOAD_STATS['name'],
+            set = [set_str], where = [where_cond])
 
 @op(ins={"start": In(Nothing)}, out = DynamicOut(Dict))
 def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> DynamicOutput[Dict]:
@@ -27,6 +51,9 @@ def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: Po
 
         # Yield dynamic output
         for row in location_coordinates:
+            update_location_load_stats(
+                location_name = row['location_name'],
+                Postgres_Target_DB = Postgres_Target_DB)
             yield DynamicOutput(row, mapping_key = f"location_spec_{row['index']}")
 
 
