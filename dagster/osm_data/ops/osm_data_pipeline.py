@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple
 
 from datetime import datetime, timezone
 
-from .init_target_db import init_target_db
+from .db_integrity import maintain_db_integrity
 
 from . import LOCATION_COORDINATES_TBL
 from . import LOCATION_LOAD_STATS
@@ -118,6 +118,6 @@ def collect_and_store_results(context: OpExecutionContext, Postgres_Target_DB: P
 
 @graph
 def osm_data_pipeline_graph() -> None:
-    location_specs = get_location_coordinates(start = init_target_db())
+    location_specs = get_location_coordinates(start = maintain_db_integrity())
     changeset_headers, changeset_data = location_specs.map(get_changeset_info_for_location)
     collect_and_store_results(changeset_headers.collect(), changeset_data.collect())

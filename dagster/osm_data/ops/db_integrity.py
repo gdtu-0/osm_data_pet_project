@@ -1,4 +1,4 @@
-from dagster import op, OpExecutionContext
+from dagster import graph, op, OpExecutionContext
 from ..resources import PostgresTargetDB
 
 from . import TABLES_TO_MAINTAIN
@@ -6,10 +6,10 @@ from . import LOCATION_COORDINATES_TBL
 from . import LOCATION_LOAD_STATS
 
 @op(out = None)
-def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> None:
+def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> None:
     """Check if setup and staging tables were created in target database"""
     
-    # Check DB consistency
+    # Check DB integrity
     for table in TABLES_TO_MAINTAIN:
         # Check if table exists and create of necessary
         if not Postgres_Target_DB.table_exists(table['name']):
@@ -51,21 +51,26 @@ def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTarg
                     values = [val])
                 context.log.info(f"Inserted initial record {val} into setup table \'{table['name']}\'")
 
-    # Check load statistics consistency
+    # Check statistics integrity
     location_specs = Postgres_Target_DB.select_from_table(
         table_name = LOCATION_COORDINATES_TBL['name'],
         columns = LOCATION_COORDINATES_TBL['columns'])
     for location_spec in location_specs:
-        where_cond = [f"location_name = {location_spec["location_name"]}"]
+        where_cond = [f"location_name = \'{location_spec['location_name']}\'"]
         res = Postgres_Target_DB.select_from_table(
             table_name = LOCATION_LOAD_STATS['name'],
             columns = LOCATION_LOAD_STATS['columns'],
-            where = [where_cond])
+            where = where_cond)
         if not res:
             # No records for this location, insert new one
             Postgres_Target_DB.insert_into_table(
                 table_name = LOCATION_LOAD_STATS['name'],
                 columns = LOCATION_LOAD_STATS['columns'],
                 # 'location_name', 'update_timestamp', 'initial_load_required', 'initial_load_start_from_ts'
-                values = [(location_spec["location_name"], None, True, None)])
-            context.log.info(f"Created statistics record for location \'{location_spec["location_name"]}\'")
+                values = [(location_spec['location_name'], None, True, None)])
+            context.log.info(f"Created statistics record for location \'{location_spec['location_name']}\'")
+
+
+@graph
+def maintain_db_integrity_graph() -> None:
+    maintain_db_integrity()
