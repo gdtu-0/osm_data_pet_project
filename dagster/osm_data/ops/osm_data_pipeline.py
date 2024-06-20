@@ -20,13 +20,14 @@ def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: Po
     location_coordinates = Postgres_Target_DB.select_from_table(
         table_name = LOCATION_COORDINATES_TBL['name'],
         columns = LOCATION_COORDINATES_TBL['columns'])
+    
+    if location_coordinates is not None:                                                                    # TODO add else
+        context.log.info("Processing changeset info for locations:\n" + 
+            ",\n".join(f"{row['index']}: {row['location_name']}" for row in location_coordinates))
 
-    context.log.info("Processing changeset info for locations:\n" + 
-        ",\n".join(f"{row['index']}: {row['location_name']}" for row in location_coordinates))
-
-    # Yield dynamic output
-    for row in location_coordinates:
-        yield DynamicOutput(row, mapping_key = f"location_spec_{row['index']}")
+        # Yield dynamic output
+        for row in location_coordinates:
+            yield DynamicOutput(row, mapping_key = f"location_spec_{row['index']}")
 
 
 @op(out = {"changeset_headers": Out(), "changeset_data": Out()})

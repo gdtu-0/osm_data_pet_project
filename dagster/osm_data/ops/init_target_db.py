@@ -31,7 +31,7 @@ def init_target_db(context: OpExecutionContext, Postgres_Target_DB: PostgresTarg
                             table_name = table['name'],
                             columns = table['columns'],
                             where = where_cond)
-                if len(res) > 0:
+                if res is not None:
                     # Result is passed as list of dicts
                     # We take one row and convert it into tuple
                     # as it is represented in setup code

@@ -101,7 +101,7 @@ class PostgresTargetDB(ConfigurableResource):
 
 
     @handle_connection
-    def select_from_table(self, connection, table_name:str, columns:list, where:Optional[List[str]] = None) -> list:          # TODO: A lot to be done here...
+    def select_from_table(self, connection, table_name:str, columns:list, where:Optional[List[str]] = None) -> Optional[list]:          # TODO: A lot to be done here...
         """Select statement (very basic functionality)"""
 
         columns_str = ",\n\t\t".join(name for name in columns)
@@ -113,10 +113,13 @@ class PostgresTargetDB(ConfigurableResource):
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute(sql_str)
             responce = cursor.fetchall()
-            result = []
-            for row in responce:
-                result.append(dict(row))
-            return(result)
+            if not responce:
+                return None
+            else:
+                result = []
+                for row in responce:
+                    result.append(dict(row))
+                return(result)
     
 
     @handle_connection
