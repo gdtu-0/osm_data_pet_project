@@ -6,10 +6,9 @@ field of the table MUST be an index or any field that
 acts as a primay key for the table.
 """
 
-
 LOCATION_COORDINATES_TBL = {
     'name': 'osm_location_coordinates',
-    'columns': {
+    'column_specs': {
         "index":            "integer NOT NULL",
         "location_name":    "varchar NOT NULL",
         "min_lon":          "numeric NOT NULL",
@@ -28,7 +27,7 @@ LOCATION_COORDINATES_TBL = {
 
 LOCATION_LOAD_STATS = {
     'name': 'osm_location_load_stats',
-    'columns': {
+    'column_specs': {
         'location_name':                "varchar NOT NULL",
         'update_timestamp':             "timestamp with time zone",
         'initial_load_required':        "boolean",
@@ -38,7 +37,7 @@ LOCATION_LOAD_STATS = {
 
 CHANGESET_HEADERS_TBL = {
     'name': 'osm_changeset_headers',
-    'columns': {
+    'column_specs': {
         'load_timestamp':   "timestamp with time zone NOT NULL",
         "location_name":    "varchar NOT NULL",
         'changeset_id':     "bigint NOT NULL",
@@ -52,7 +51,7 @@ CHANGESET_HEADERS_TBL = {
 
 CHANGESET_DATA_TBL = {
     'name': 'osm_changeset_data',
-    'columns': {
+    'column_specs': {
         'load_timestamp':   "timestamp with time zone NOT NULL",
         'changeset_id':     "bigint NOT NULL",
         'action':           "varchar NOT NULL",
@@ -69,3 +68,6 @@ TABLES_TO_MAINTAIN = [
     CHANGESET_HEADERS_TBL,
     CHANGESET_DATA_TBL,
 ]
+
+for table in TABLES_TO_MAINTAIN:
+    table.update({'columns': tuple(table['column_specs'].keys())})

@@ -18,23 +18,12 @@ def update_location_load_stats(location_name: str, Postgres_Target_DB: PostgresT
 
     update_timestamp = datetime.now(timezone.utc)
     set_str = f"update_timestamp = \'{update_timestamp}\'"
-    where_cond = f"location_name = \'{location_name}\'"         # TODO Refactor
-    res = Postgres_Target_DB.select_from_table(
+    where_cond = f"location_name = \'{location_name}\'"
+    # Update timestamp
+    Postgres_Target_DB.update_table(
         table_name = LOCATION_LOAD_STATS['name'],
-        columns = LOCATION_LOAD_STATS['columns'],
-        where = [where_cond])
-    if not res:
-        # No records for this location, insert new one
-        Postgres_Target_DB.insert_into_table(
-            table_name = LOCATION_LOAD_STATS['name'],
-            columns = LOCATION_LOAD_STATS['columns'],
-            # 'location_name', 'update_timestamp', 'initial_load_required', 'initial_load_start_from_ts'
-            values = [(location_name, update_timestamp, True, None)])
-    else:
-        # Update timestamp
-        Postgres_Target_DB.update_table(
-            table_name = LOCATION_LOAD_STATS['name'],
-            set = [set_str], where = [where_cond])
+        set = [set_str], where = [where_cond])
+
 
 @op(ins={"start": In(Nothing)}, out = DynamicOut(Dict))
 def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> DynamicOutput[Dict]:
@@ -45,7 +34,7 @@ def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: Po
         table_name = LOCATION_COORDINATES_TBL['name'],
         columns = LOCATION_COORDINATES_TBL['columns'])
     
-    if location_coordinates is not None:                                                                    # TODO add else
+    if location_coordinates:
         context.log.info("Processing changeset info for locations:\n" + 
             ",\n".join(f"{row['index']}: {row['location_name']}" for row in location_coordinates))
 
@@ -89,7 +78,6 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
     # Remove helper columns from dataframe
     changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis = 1, inplace = True)
 
-    
     # Get changeset data
     changeset_data_df = OSM_Public_API.get_changeset_data(
         changeset_ids = changeset_headers_df['changeset_id'].tolist())

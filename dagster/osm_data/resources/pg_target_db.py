@@ -67,7 +67,7 @@ class PostgresTargetDB(ConfigurableResource):
 
 
     @handle_connection
-    def create_table(self, connection, table_name:str, columns:list) -> str:
+    def create_table(self, connection, table_name:str, columns:List[dict]) -> str:
         """Create table"""
 
         columns_str = ",\n\t".join(f'{name} {specs}' for name, specs in columns.items())
@@ -79,7 +79,7 @@ class PostgresTargetDB(ConfigurableResource):
 
 
     @handle_connection
-    def insert_into_table(self, connection, table_name:str, columns:list, values:list):
+    def insert_into_table(self, connection, table_name:str, columns:tuple, values:List[tuple]):
         """Insert values into table"""
 
         columns_str = ", ".join(name for name in columns)
@@ -101,7 +101,7 @@ class PostgresTargetDB(ConfigurableResource):
 
 
     @handle_connection
-    def select_from_table(self, connection, table_name:str, columns:list, where:Optional[List[str]] = None) -> Optional[list]:          # TODO: A lot to be done here...
+    def select_from_table(self, connection, table_name:str, columns:tuple, where:Optional[List[str]] = None) -> Optional[list]:          # TODO: A lot to be done here...
         """Select statement (very basic functionality)"""
 
         columns_str = ",\n\t\t".join(name for name in columns)
