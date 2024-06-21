@@ -3,8 +3,6 @@ from ..resources.pg_target_db import PostgresTargetDB
 
 from dataclasses import dataclass # type: ignore
 from typing import Optional, List, Dict, Tuple
-from decimal import Decimal
-from datetime import datetime
 
 # Schema classes for data model
 
