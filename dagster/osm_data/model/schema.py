@@ -11,6 +11,9 @@ from datetime import datetime
 class LocationSpec:
     """Location specification"""
 
+    # Kinda wrapper for dict that stores only keys from __accepted_names
+    # Attributes are added dynamically and can be accesed like ordinary object attributes
+
     __accepted_names = (
         'location_name',   # location name
         'min_lon',         # longitude of the left (westernmost) side of the bounding box
