@@ -62,6 +62,25 @@ def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: Postg
             stats_table.insert(values = [val], log = context.log)
 
 
+# FOR HOUSEKEEPING
+
+# python import datetime
+# from dagster import DagsterInstance, RunsFilter
+
+# instance = DagsterInstance.get()
+# # Define the time threshold for what is old enough, this example uses 1 week
+# week_ago = datetime.datetime.now() - datetime.timedelta(days=7)
+# old_run_records = instance.get_run_records(
+#      filters=RunsFilter(created_before=week_ago),
+#      limit=10,  # Limit how many are fetched at a time, perform this operation in batches
+#      ascending=True,  # Start from the oldest )
+# # In this simple example we delete serially
+# # For higher throughput you could parallelize with threads
+# for record in old_run_records:
+#      # Delete all the database contents for this run
+#      instance.delete_run(record.dagster_run.run_id)
+
+
 @graph
 def maintain_db_integrity_graph() -> None:
     maintain_db_integrity()
