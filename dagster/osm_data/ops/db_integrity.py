@@ -1,10 +1,9 @@
 from dagster import graph, op, OpExecutionContext
 from ..resources import PostgresTargetDB
 
+from ..model.schema import LocationSpec
 from ..model.setup import INITIAL_LOCATIONS
-from . import TABLES_TO_MAINTAIN
-from . import LOCATION_COORDINATES_TBL
-from . import LOCATION_LOAD_STATS
+from ..model.setup import SETUP_TABLES
 
 
 @op(out = None)
@@ -12,33 +11,31 @@ def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: Postg
     """Check if setup and staging tables were created in target database"""
     
     # Check DB integrity
-    for table in TABLES_TO_MAINTAIN:
+    for table in SETUP_TABLES.values():
+        # Link tables to resource
+        if not table.init_flag:
+            table.link_to_resource(Postgres_Target_DB)
         # Check if table exists and create of necessary
-        if not Postgres_Target_DB.table_exists(table['name']):
-            context.log.info(f"Table \'{table['name']}\' is missing")
+        if not table.exists:
+            context.log.info(f"Table \'{table.name}\' is missing")
             # Create table
-            ddl = Postgres_Target_DB.create_table(
-                table_name = table['name'],
-                columns = table['column_specs'])
-            context.log.info(f"Table \'{table['name']}\' was created with statement:\n\n{ddl}")
+            table.create(log = context.log)
 
     # Fill in initial locations if necessary
+    coord_table = SETUP_TABLES['location_coordinates_tbl']
     for index, location_spec in INITIAL_LOCATIONS.items():
         # Read location table from DB
-        where_cond = [f"location_name = \'{location_spec.location_name}\'"]
-        res = Postgres_Target_DB.select_from_table(
-            table_name = LOCATION_COORDINATES_TBL['name'],
-            columns = LOCATION_COORDINATES_TBL['columns'],
-            where = where_cond)
-        if res:
+        where_cond = {'location_name': location_spec.location_name}
+        result = coord_table.select(where = where_cond, log = context.log)
+        if result:
             # Result is passed as list of dicts
             # We need only first row
-            res = res[0]
+            result = result[0]
             rec_mismatch = False
             for key, value in location_spec.to_dict().items():
-                if res.get(key, 'NO_KEY') == 'NO_KEY':  # No field in db table
+                if result.get(key, 'NO_KEY') == 'NO_KEY':  # No field in db table
                     continue
-                if res.get(key) != value:
+                if result.get(key) != value:
                     rec_mismatch = True
                     break
             if rec_mismatch == False:
@@ -48,34 +45,21 @@ def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: Postg
         # Insert(replace) new record
         val = (index, location_spec.location_name, location_spec.min_lon, location_spec.min_lat,
                location_spec.max_lon, location_spec.max_lat)
-        print(val)
-        Postgres_Target_DB.delete_from_table(
-            table_name = LOCATION_COORDINATES_TBL['name'],
-            where = where_cond)
-        Postgres_Target_DB.insert_into_table(
-            table_name = LOCATION_COORDINATES_TBL['name'],
-            columns = LOCATION_COORDINATES_TBL['columns'],
-            values = [val])
-        context.log.info(f"Inserted initial record {val} into setup table \'{LOCATION_COORDINATES_TBL['name']}\'")
+        coord_table.delete(where = where_cond, log = context.log)
+        coord_table.insert(values = [val], log = context.log)
     
+    # Load location specs
+    location_specs = [LocationSpec(spec) for spec in coord_table.select(log = context.log)]
+
     # Check statistics integrity
-    location_specs = Postgres_Target_DB.select_from_table(
-        table_name = LOCATION_COORDINATES_TBL['name'],
-        columns = LOCATION_COORDINATES_TBL['columns'])
+    stats_table = SETUP_TABLES['location_load_stats']
     for location_spec in location_specs:
-        where_cond = [f"location_name = \'{location_spec['location_name']}\'"]
-        res = Postgres_Target_DB.select_from_table(
-            table_name = LOCATION_LOAD_STATS['name'],
-            columns = LOCATION_LOAD_STATS['columns'],
-            where = where_cond)
-        if not res:
+        where_cond = {'location_name': location_spec.location_name}
+        result = stats_table.select(where = where_cond, log = context.log)
+        if not result:
             # No records for this location, insert new one
-            Postgres_Target_DB.insert_into_table(
-                table_name = LOCATION_LOAD_STATS['name'],
-                columns = LOCATION_LOAD_STATS['columns'],
-                # 'location_name', 'update_timestamp', 'initial_load_required', 'initial_load_start_from_ts'
-                values = [(location_spec['location_name'], None, True, None)])
-            context.log.info(f"Created statistics record for location \'{location_spec['location_name']}\'")
+            val = (location_spec.location_name, None, None, None)
+            stats_table.insert(values = [val], log = context.log)
 
 
 @graph

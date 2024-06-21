@@ -1,36 +1,50 @@
+from dagster import DagsterLogManager
+from ..resources.pg_target_db import PostgresTargetDB
+
 from dataclasses import dataclass # type: ignore
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 from decimal import Decimal
 from datetime import datetime
 
 # Schema classes for data model
 
-@dataclass
 class LocationSpec:
     """Location specification"""
 
-    location_name: str  # location name
-    min_lon: Decimal    # longitude of the left (westernmost) side of the bounding box
-    min_lat: Decimal    # latitude of the bottom (southernmost) side of the bounding box
-    max_lon: Decimal    # longitude of the right (easternmost) side of the bounding box
-    max_lat: Decimal    # latitude of the top (northernmost) side of the bounding box
-    update_timestamp: Optional[datetime] = None             # last update timestamp
-    initial_load_required: Optional[bool] = None            # initial load flag
-    initial_load_start_from_ts: Optional[datetime] = None   # initial load start from
+    __accepted_names = (
+        'location_name',   # location name
+        'min_lon',         # longitude of the left (westernmost) side of the bounding box
+        'min_lat',         # latitude of the bottom (southernmost) side of the bounding box
+        'max_lon',         # longitude of the right (easternmost) side of the bounding box
+        'max_lat',         # latitude of the top (northernmost) side of the bounding box
+        'update_timestamp',                # last update timestamp
+        'initial_load_required',           # initial load flag
+        'initial_load_start_from_ts',      # initial load start from
+    )
+
+    def __init__(self, values: Dict) -> None:
+        """LocationSpec is built from dict"""
+
+        for name in self.__accepted_names:
+            if values.get(name, 'NO_KEY') != 'NO_KEY':
+                setattr(self, name, values[name])
+    
+    def __repr__(self) -> str:
+        return("LocationSpec: {contents}".format(contents = str(self.to_dict())))
+    
+    def __str__(self) -> str:
+        return("LocationSpec: {contents}".format(contents = str(self.to_dict())))
 
     def to_dict(self) -> Dict:
         """Convert location spec to dict"""
         
-        return({
-            'location_name': self.location_name,
-            'min_lon': self.min_lon,
-            'min_lat': self.min_lat,
-            'max_lon': self.max_lon,
-            'max_lat': self.max_lat,
-            'update_timestamp': self.update_timestamp,
-            'initial_load_required': self.initial_load_required,
-            'initial_load_start_from_ts': self.initial_load_start_from_ts,
-        })
+        out = {}
+        for name in self.__accepted_names:
+            value = getattr(self, name, 'NO_KEY')
+            if value != 'NO_KEY':
+                out[name] = value
+        return out
+
 
 @dataclass
 class Table:
@@ -39,15 +53,85 @@ class Table:
     name: str   # Database table name
     column_specs: Dict  # Dict structure of table fields where key is a field name
                         # and value is column definition
+    _db_resource: Optional[PostgresTargetDB] = None  # Database resource
     
     def __post_init__(self) -> None:
-        self.columns = tuple(self.column_specs.keys())
+        """Post init hooks"""
 
-# TODO
-# class LocationSpecDBInterface:
-#     """Class for DB location syncronization"""
+        self.init_flag = False  # Table object initialization flag
+        self.exists = False     # Table exists in database
+        self.columns = tuple(self.column_specs.keys())  # List of table column names
+    
+    def link_to_resource(self, resource: PostgresTargetDB) -> None:
+        """Get DB resource and check if table exists"""
+        
+        self._db_resource = resource
+        self._check_if_exists()
+        self.init_flag = True
+    
+    def _check_if_exists(self) -> None:
+        """Check if table exists in database"""
 
-#     def __init__(self) -> None:
-#         self.dbResource = PROJECT_RESOURCES["Postgres_Target_DB"]
+        self.exists = self._db_resource.table_exists(self.name)
+    
 
-#     def getLocationSpecs(self) -> Optional[List[LocationSpec]]:
+    def create(self, log: Optional[DagsterLogManager] = None) -> None:
+        """Create table in database"""
+
+        columns_str = ",\n  ".join(f'{name} {specs}' for name, specs in self.column_specs.items())
+        create_str = f"CREATE TABLE {self.name} (\n  {columns_str}\n)"
+        sql_str = f"{create_str};"
+        self._db_resource.exec_sql_no_fetch(sql = sql_str)
+        if log:
+            log.info(f"SQL statement:\n\n{sql_str}")
+
+    
+    def select(self, columns: Optional[Tuple] = None, where: Optional[Dict] = None, log: Optional[DagsterLogManager] = None) -> Optional[List[Dict]]:
+        """Select statement"""
+
+        # Very basic functionality
+        # For WHERE condition only EQ operator is implemented
+        # Different columns in WHERE combined with AND
+        # Does not support duplicate columns in WHERE 
+        # Values in WHERE are quoted, so numeric types are not supported
+    
+        if columns:
+            columns_str = ", ".join(name for name in columns)
+        else:
+            columns_str = ", ".join(name for name in self.columns)
+        select_str = f"SELECT\n  {columns_str}\n"
+        from_str = f"FROM {self.name}"
+        if where:
+            where_str = "\nWHERE\n  " + " AND\n  ".join(f"{col_name} = \'{val}\'" for col_name, val in where.items())
+        else:
+            where_str = ''
+        sql_str = f"{select_str}{from_str}{where_str};"
+        result = self._db_resource.exec_sql_dict_cursor(sql = sql_str)
+        if log:
+            if result:
+                log.info(f"SQL statement:\n\n{sql_str}\n\nResults:\n\n  " + ",\n  ".join(str(row) for row in result))
+            else:
+                log.info(f"SQL statement:\n\n{sql_str}\n\nResults:\n\n  {result}")  # In case of None
+        return result
+    
+
+    def delete(self, where: Dict, log: Optional[DagsterLogManager] = None) -> None:
+        """Delete statement"""
+
+        delete_str = f"DELETE FROM {self.name}\n"
+        where_str = "WHERE\n  " + " AND\n  ".join(f"{col_name} = \'{val}\'" for col_name, val in where.items())
+        sql_str = f"{delete_str}{where_str};"
+        self._db_resource.exec_sql_no_fetch(sql = sql_str)
+        if log:
+            log.info(f"SQL statement:\n\n{sql_str}")
+    
+
+    def insert(self, values: List[Tuple], log: Optional[DagsterLogManager] = None) -> None:
+        """Insert statement"""
+
+        columns_str = ", ".join(name for name in self.columns)
+        insert_str = f"INSERT INTO {self.name}\n  ({columns_str})\nVALUES %s"
+        sql_str = f"{insert_str}"
+        self._db_resource.exec_insert(sql = sql_str, values = values)
+        if log:
+            log.info(f"SQL statement:\n\n{sql_str}\n  " + ",\n  ".join(str(elem) for elem in values))

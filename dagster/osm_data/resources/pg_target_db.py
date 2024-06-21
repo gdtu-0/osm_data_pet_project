@@ -4,7 +4,7 @@ import functools
 import psycopg2 # type: ignore
 import psycopg2.extras # type: ignore
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 class PostgresTargetDB(ConfigurableResource):
     """Dagster resource definition for target Postgres database"""
@@ -121,6 +121,41 @@ class PostgresTargetDB(ConfigurableResource):
                     result.append(dict(row))
                 return(result)
     
+
+    @handle_connection
+    def exec_sql_dict_cursor(self, connection, sql: str) -> Optional[list]:
+        """Execute SQL statement with dict cursor"""
+
+        with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(sql)
+            responce = cursor.fetchall()
+            if not responce:
+                return None
+            else:
+                result = []
+                for row in responce:
+                    result.append(dict(row))
+                return(result)
+    
+
+    @handle_connection
+    def exec_sql_no_fetch(self, connection, sql: str) -> None:
+        """Execute SQL statement and return nothing"""
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            connection.commit()
+    
+
+    @handle_connection
+    def exec_insert(self, connection, sql: str, values: List[Tuple]):
+        """Special case for insert statement"""
+
+        with connection.cursor() as cursor:
+            psycopg2.extras.execute_values (
+                cursor, sql, values, template=None, page_size=100)
+            connection.commit()
+
 
     @handle_connection
     def delete_from_table(self, connection, table_name:str, where:List[str]):
