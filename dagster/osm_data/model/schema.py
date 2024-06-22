@@ -16,8 +16,7 @@ class LocationSpec:
     # Kinda wrapper for dict that stores only keys from __accepted_names
     # Attributes are added dynamically and can be accesed like ordinary object attributes
 
-    __accepted_names = (
-        'index',           # location index
+    __accepted_attr_names = (
         'location_name',   # location name
         'min_lon',         # longitude of the left (westernmost) side of the bounding box
         'min_lat',         # latitude of the bottom (southernmost) side of the bounding box
@@ -28,12 +27,22 @@ class LocationSpec:
         'initial_load_start_from_ts',      # initial load start from
     )
 
-    def __init__(self, values: Dict) -> None:
+    def __init__(self, dict: Dict) -> None:
         """LocationSpec is built from dict"""
 
-        for name in self.__accepted_names:
-            if values.get(name, 'NO_KEY') != 'NO_KEY':
-                setattr(self, name, values[name])
+        for name in self.__accepted_attr_names:
+            if dict.get(name, 'NO_KEY') != 'NO_KEY':
+                setattr(self, name, dict[name])
+    
+    def __eq__(self, other) -> bool:
+        """Check LocationSpecs based on attribute values"""
+
+        if type(self) != type(other):
+            return False
+        for name in self.__accepted_attr_names:
+            if getattr(self, name, 'NO_KEY') != getattr(other, name, 'NO_KEY'):
+                return False
+        return True
     
     def __repr__(self) -> str:
         return("LocationSpec: {contents}".format(contents = str(self.to_dict())))
@@ -45,7 +54,7 @@ class LocationSpec:
         """Convert location spec to dict"""
         
         out = {}
-        for name in self.__accepted_names:
+        for name in self.__accepted_attr_names:
             value = getattr(self, name, 'NO_KEY')
             if value != 'NO_KEY':
                 out[name] = value

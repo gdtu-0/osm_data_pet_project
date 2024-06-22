@@ -30,31 +30,28 @@ def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_D
 
     # Fill in initial locations if necessary
     coord_table = setup_tables['location_coordinates_tbl']
-    for index, spec in INITIAL_LOCATIONS.items():
+    for spec in INITIAL_LOCATIONS.values():
+        rec_update_required = True
+        
         # Read location table from DB
         where_cond = {'location_name': spec.location_name}
         result = coord_table.select(where = where_cond, log = context.log, logging_enabled = False)
         if result:
             # Result is passed as list of dicts
-            # We need only first row
-            result = result[0]
-            rec_mismatch = False
-            for key, value in spec.to_dict().items():
-                if result.get(key, 'NO_KEY') == 'NO_KEY':  # No field in db table
-                    continue
-                if result.get(key) != value:
-                    rec_mismatch = True
-                    break
-            if rec_mismatch == False:
-                # Values are equal, continue to next row
-                continue
-        # If we got here then either row was missing or values were not equal
-        # Insert(replace) new record
-        context.log.info(f"Update location spec record for location \'{spec.location_name}\' in table \'{coord_table.name}\'")
-        val = (index, spec.location_name, spec.min_lon, spec.min_lat,
-               spec.max_lon, spec.max_lat)
-        coord_table.delete(where = where_cond, log = context.log, logging_enabled = True)
-        coord_table.insert(values = [val], log = context.log, logging_enabled = True)
+            # We need only first row assuming location names do not duplicate
+            db_spec_record = LocationSpec(result[0])
+            # Check initial spec record and db spec record are equal
+            if spec == db_spec_record:
+                rec_update_required = False
+        
+        if rec_update_required:
+            # If we got here then either row was missing or values were not equal
+            # Insert(replace) new record
+            context.log.info(f"Update location spec record for location \'{spec.location_name}\' in table \'{coord_table.name}\'")
+            val = (spec.location_name, spec.min_lon, spec.min_lat,
+                spec.max_lon, spec.max_lat)
+            coord_table.delete(where = where_cond, log = context.log, logging_enabled = True)
+            coord_table.insert(values = [val], log = context.log, logging_enabled = True)
     
     # Load location specs
     context.log.info("Select location spec records from DB")

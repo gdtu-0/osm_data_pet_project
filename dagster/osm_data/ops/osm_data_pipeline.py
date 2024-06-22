@@ -30,8 +30,8 @@ def get_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) 
             ",\n".join(f"{str(spec.index)}: {spec.location_name}" for spec in location_specs))
 
         # Yield dynamic output
-        for spec in location_specs:
-            yield DynamicOutput(spec, mapping_key = f"location_spec_{spec.index}")
+        for index, spec in enumerate(location_specs):
+            yield DynamicOutput(spec, mapping_key = f"location_spec_{index}")
 
 
 @op(out = {"changeset_headers": Out(), "changeset_data": Out()})

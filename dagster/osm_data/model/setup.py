@@ -47,8 +47,7 @@ SETUP_TABLES = {
     'location_coordinates_tbl': Table(
         name = 'osm_location_coordinates',
         column_specs = {
-            "index":            "integer NOT NULL",
-            "location_name":    "varchar NOT NULL",
+            "location_name":    "varchar UNIQUE NOT NULL",
             "min_lon":          "numeric NOT NULL",
             "min_lat":          "numeric NOT NULL",
             "max_lon":          "numeric NOT NULL",
@@ -58,7 +57,7 @@ SETUP_TABLES = {
     'location_load_stats': Table(
         name = 'osm_location_load_stats',
         column_specs = {
-            'location_name':                "varchar NOT NULL",
+            'location_name':                "varchar UNIQUE NOT NULL",
             'update_timestamp':             "timestamp with time zone",
             'initial_load_required':        "boolean",
             'initial_load_start_from_ts':   "timestamp with time zone",
