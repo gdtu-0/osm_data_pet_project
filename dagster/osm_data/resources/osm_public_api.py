@@ -9,13 +9,17 @@ from pandas import DataFrame # type: ignore
 from typing import Optional
 from datetime import datetime
 
+from decimal import Decimal
+
 OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6"
 
 class OsmPublicApi(ConfigurableResource):
     """Dagster resource definition for OSM Public API at
     https://api.openstreetmap.org/api/0.6/"""
 
-    def get_closed_changesets_by_bbox(self, min_lon, min_lat, max_lon, max_lat, load_from_ts: Optional[datetime] = None) -> DataFrame:
+    def get_closed_changesets_by_bbox(self, min_lon: Decimal, min_lat: Decimal,
+                                            max_lon: Decimal, max_lat: Decimal,
+                                            load_from_ts: Optional[datetime] = None) -> DataFrame:
         """Returns pandas DataFrame with changeset header info at given coordinates of a bounding box
 
         min_lon (left) - is the longitude of the left (westernmost) side of the bounding box
@@ -31,7 +35,7 @@ class OsmPublicApi(ConfigurableResource):
         """
 
         api_url = f"{OSM_API_URL_BASE}/changesets"
-        bbox_str = f"{min_lon},{min_lat},{max_lon},{max_lat}"
+        bbox_str = f"{str(min_lon)},{str(min_lat)},{str(max_lon)},{str(max_lat)}"
         api_params = {'bbox': bbox_str, 'closed': 'true'}
         if load_from_ts:
             api_params.update({'time': load_from_ts, 'order': 'oldest'})
@@ -65,10 +69,10 @@ class OsmPublicApi(ConfigurableResource):
                 'u_username': l_changeset.get('user'),
                 'comment': comment,
                 'source': source,
-                'min_lat': float(l_changeset.get('min_lat')),
-                'min_lon': float(l_changeset.get('min_lon')),
-                'max_lat': float(l_changeset.get('max_lat')),
-                'max_lon': float(l_changeset.get('max_lon')),
+                'min_lat': Decimal(str(l_changeset.get('min_lat'))),
+                'min_lon': Decimal(str(l_changeset.get('min_lon'))),
+                'max_lat': Decimal(str(l_changeset.get('max_lat'))),
+                'max_lon': Decimal(str(l_changeset.get('max_lon'))),
             })
         return chst_headers_l
 

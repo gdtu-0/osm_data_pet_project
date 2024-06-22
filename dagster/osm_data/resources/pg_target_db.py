@@ -6,7 +6,7 @@ import psycopg2.extras # type: ignore
 
 from typing import Optional, List, Tuple
 
-class PostgresTargetDB(ConfigurableResource):
+class Target_PG_DB(ConfigurableResource):
     """Dagster resource definition for target Postgres database"""
 
     dbname:str

@@ -1,14 +1,21 @@
+from decimal import Decimal
+from typing import Dict
+
+# Import schema
 from .schema import LocationSpec
 from .schema import Table
 
-from decimal import Decimal
+# Import resources
+from ..resources import Target_PG_DB
 
-# ========== Setup constants ==========
+
+# ============= Setup constants =============
 
 # Number of days to store dagster run records
 KEEP_DAGSTER_RUNS_FOR_NUM_DAYS = 7
 
-# Setup tables and data
+
+# ========== Setup tables and data ==========
 
 # Initial locations
 INITIAL_LOCATIONS = {
@@ -83,3 +90,12 @@ SETUP_TABLES = {
         }
     )
 }
+
+def get_setup_tables_with_resource(resource: Target_PG_DB) -> Dict[str, Table]:
+    """Dagster resources exist only in asset/op execution context
+    so we have to link tabsles every run"""
+
+    setup_tables = SETUP_TABLES
+    for table in setup_tables.values():
+        table.link_to_resource(resource)
+    return(setup_tables)

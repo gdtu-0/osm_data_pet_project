@@ -1,124 +1,132 @@
-from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput, Nothing
-from ..resources import PostgresTargetDB, OsmPublicApi
-
 from pandas import DataFrame # type: ignore
-from typing import List, Dict, Tuple
-
 from datetime import datetime, timezone
+from decimal import Decimal
+from typing import List, Tuple
 
-from ..model.setup import SETUP_TABLES
-from .db_maintenance import maintain_db_integrity
+# Import Dagster
+from dagster import op, graph, OpExecutionContext, Out, DynamicOut, DynamicOutput
 
-from . import LOCATION_COORDINATES_TBL
-from . import LOCATION_LOAD_STATS
-from . import CHANGESET_HEADERS_TBL
-from . import CHANGESET_DATA_TBL
-
-def update_location_load_stats(location_name: str, Postgres_Target_DB: PostgresTargetDB):
-    """Update location load statistics"""
-
-    update_timestamp = datetime.now(timezone.utc)
-    set_str = f"update_timestamp = \'{update_timestamp}\'"
-    where_cond = f"location_name = \'{location_name}\'"
-    # Update timestamp
-    Postgres_Target_DB.update_table(
-        table_name = LOCATION_LOAD_STATS['name'],
-        set = [set_str], where = [where_cond])
+# Import schema, setup and resources
+from ..resources import Target_PG_DB, OsmPublicApi
+from ..model.schema import LocationSpec
+from ..model.setup import get_setup_tables_with_resource
 
 
-@op(ins={"start": In(Nothing)}, out = DynamicOut(Dict))
-def get_location_coordinates(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> DynamicOutput[Dict]:
+@op(out = DynamicOut(LocationSpec))
+def get_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) -> DynamicOutput[LocationSpec]:
     """Read location coordinates from setup table"""
 
-    # Read setup table from DB
-    location_coordinates = Postgres_Target_DB.select_from_table(
-        table_name = LOCATION_COORDINATES_TBL['name'],
-        columns = LOCATION_COORDINATES_TBL['columns'])
+    # Dagster resources exist only in asset/op execution context
+    # so we have to link tabsles every run
+    setup_tables = get_setup_tables_with_resource(Target_PG_DB)
+
+    # Read location speccs table from DB
+    coord_table = setup_tables['location_coordinates_tbl']
+    context.log.info("Select location spec records from DB")
+    location_specs = [LocationSpec(spec) for spec in coord_table.select(log = context.log, logging_enabled = True)]
     
-    if location_coordinates:
+    if location_specs:
         context.log.info("Processing changeset info for locations:\n" + 
-            ",\n".join(f"{row['index']}: {row['location_name']}" for row in location_coordinates))
+            ",\n".join(f"{str(spec.index)}: {spec.location_name}" for spec in location_specs))
 
         # Yield dynamic output
-        for row in location_coordinates:
-            update_location_load_stats(
-                location_name = row['location_name'],
-                Postgres_Target_DB = Postgres_Target_DB)
-            yield DynamicOutput(row, mapping_key = f"location_spec_{row['index']}")
+        for spec in location_specs:
+            yield DynamicOutput(spec, mapping_key = f"location_spec_{spec.index}")
 
 
 @op(out = {"changeset_headers": Out(), "changeset_data": Out()})
-def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: dict) -> Tuple[DataFrame, DataFrame]:
+def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: LocationSpec) -> Tuple[DataFrame, DataFrame]:
     """Get changeset headers and data from API for location"""
 
-    context.log.info(   f"{location_spec['index']}: Thread for location \'{location_spec['location_name']}\'\n" + 
-                        "BBox boundaries are:\n" +
-                        f"   min_lon {location_spec['min_lon']}\tmin_lat {location_spec['min_lat']}\n" +
-                        f"   max_lon {location_spec['max_lon']}\tmax_lat {location_spec['max_lat']}")
+    bbox_boundaries_str = ( f"  min_lon: {str(location_spec.min_lon)}\tmin_lat: {str(location_spec.min_lat)}\n" +
+                            f"  max_lon: {str(location_spec.max_lon)}\tmax_lat: {str(location_spec.max_lat)}" )
+    context.log.info(f"Thread for location \'{location_spec.location_name}\'\nBBox boundaries are:\n{bbox_boundaries_str}")
 
     # Get changeset headers
     changeset_headers_df = OSM_Public_API.get_closed_changesets_by_bbox(
-        min_lon = location_spec['min_lon'], min_lat = location_spec['min_lat'],
-        max_lon = location_spec['max_lon'], max_lat = location_spec['max_lat'])
-    # Add location name
-    changeset_headers_df.insert(0, 'location_name', location_spec['location_name'])
+        min_lon = location_spec.min_lon, min_lat = location_spec.min_lat,
+        max_lon = location_spec.max_lon, max_lat = location_spec.max_lat)
 
-    # Drop changeset with too large areas (they are often scam or service changesets)
-    AREA_BIAS_COEF = 1.1
-    SCALE_FACTOR = 1000.0
-    bbox_area = (
-        (float(location_spec['max_lat']) - float(location_spec['min_lat'])) *
-        (float(location_spec['max_lon']) - float(location_spec['min_lon'])) *
-        SCALE_FACTOR)
-    changeset_headers_df['changeset_area'] = (
-        (changeset_headers_df['max_lat'] - changeset_headers_df['min_lat']) *
-        (changeset_headers_df['max_lon'] - changeset_headers_df['min_lon']) *
-        SCALE_FACTOR)
+    # Add location name
+    changeset_headers_df.insert(0, 'location_name', location_spec.location_name)
+
+    # Helper function to clear out irrelevant changesets
+    def drop_irrelevant_changeset_headers(location_spec: LocationSpec, changeset_headers: DataFrame) -> DataFrame:
+        """Drop changeset with too large areas (they are often scam or service changesets)"""
+        
+        AREA_DIFF_COEF = Decimal('1.1')    # Maximum area coef diff
+        SCALE_FACTOR = Decimal('1000.0')   # Changeset area is too small to calculate prooperly, use scaling factor
+        
+        spec_bbox_area = (
+            (location_spec.max_lat * SCALE_FACTOR - location_spec.min_lat * SCALE_FACTOR) *
+            (location_spec.max_lon * SCALE_FACTOR - location_spec.min_lon * SCALE_FACTOR)
+        )
+        changeset_headers['changeset_area'] = (
+            (changeset_headers_df['max_lat'] * SCALE_FACTOR - changeset_headers_df['min_lat'] * SCALE_FACTOR) *
+            (changeset_headers_df['max_lon'] * SCALE_FACTOR - changeset_headers_df['min_lon'] * SCALE_FACTOR)
+        )
+
+        # Drop irrelevant changesets
+        changeset_headers_df.drop(changeset_headers_df[changeset_headers_df['changeset_area'] > spec_bbox_area * AREA_DIFF_COEF].index, inplace = True)
+        
+        # Drop columns that are not necessary anymore and return
+        return(changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis = 1))
+
     # Drop irrelevant changesets
-    changeset_headers_df.drop(changeset_headers_df[changeset_headers_df['changeset_area'] > bbox_area * AREA_BIAS_COEF].index, inplace = True)
-    # Remove helper columns from dataframe
-    changeset_headers_df.drop(['changeset_area', 'min_lat', 'max_lat', 'min_lon', 'max_lon'], axis = 1, inplace = True)
+    changeset_headers_df = drop_irrelevant_changeset_headers(
+        location_spec = location_spec,
+        changeset_headers = changeset_headers_df)
 
     # Get changeset data
     changeset_data_df = OSM_Public_API.get_changeset_data(
         changeset_ids = changeset_headers_df['changeset_id'].tolist())
 
-    context.log.info(   f"Changeset headers line count: {changeset_headers_df.shape[0]}\n" + 
-                        f"Changeset data line count: {changeset_data_df.shape[0]}")
+    context.log.info(f"Changeset headers line count: {changeset_headers_df.shape[0]}\n" + 
+                     f"Changeset data line count: {changeset_data_df.shape[0]}")
 
     # Return dataframes
     return(changeset_headers_df, changeset_data_df)
 
 
 @op(out = None)
-def collect_and_store_results(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB, 
-        changeset_headers_fan_in: List[DataFrame], changeset_data_fan_in: List[DataFrame]) -> None:
+def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_PG_DB,
+                              changeset_headers_fan_in: List[DataFrame], changeset_data_fan_in: List[DataFrame]) -> None:
     """Collect data and save to DB"""
+
+    # Dagster resources exist only in asset/op execution context
+    # so we have to link tabsles every run
+    setup_tables = get_setup_tables_with_resource(Target_PG_DB)
 
     # Add load timestamp to data
     load_timestamp = datetime.now(timezone.utc)
 
     # Save changeset headers
+    headers_table = setup_tables['changeset_headers_tbl']
+    total_records = 0
     for df in changeset_headers_fan_in:
         df.insert(0, 'load_timestamp', load_timestamp)
-        Postgres_Target_DB.insert_into_table(
-            table_name = CHANGESET_HEADERS_TBL['name'],
-            columns = df.columns.values.tolist(),
-            values = list(df.itertuples(index = False, name = None)))
-    context.log.info("Changeset headers saved to DB")
+        total_records = total_records + df.shape[0]
+        headers_table.insert(
+            values = list(df.itertuples(index = False, name = None)),
+            log = context.log,
+            logging_enabled = False)
+    context.log.info(f"Changeset headers saved to DB.\nTotal records: {total_records}")
 
     # Save changeset data
+    data_table = setup_tables['changeset_data_tbl']
+    total_records = 0
     for df in changeset_data_fan_in:
         df.insert(0, 'load_timestamp', load_timestamp)
-        Postgres_Target_DB.insert_into_table(
-            table_name = CHANGESET_DATA_TBL['name'],
-            columns = df.columns.values.tolist(),
-            values = list(df.itertuples(index = False, name = None)))
-    context.log.info("Changeset data saved to DB")
+        total_records = total_records + df.shape[0]
+        data_table.insert(
+            values = list(df.itertuples(index = False, name = None)),
+            log = context.log,
+            logging_enabled = False)
+    context.log.info(f"Changeset data saved to DB.\nTotal records: {total_records}")
 
 
 @graph
 def osm_data_pipeline_graph() -> None:
-    location_specs = get_location_coordinates(start = maintain_db_integrity())
+    location_specs = get_location_specs()
     changeset_headers, changeset_data = location_specs.map(get_changeset_info_for_location)
     collect_and_store_results(changeset_headers.collect(), changeset_data.collect())
