@@ -1,13 +1,19 @@
-from dagster import graph, op, OpExecutionContext
-from ..resources import PostgresTargetDB
+import datetime
 
+# Import Dagster
+from dagster import graph, op, OpExecutionContext, In, Nothing, DagsterInstance, RunsFilter
+
+# Import setup
+from ..resources import PostgresTargetDB    # TODO: Maybe refactor
 from ..model.schema import LocationSpec
 from ..model.setup import INITIAL_LOCATIONS
 from ..model.setup import SETUP_TABLES
 
+# Import constants
+from ..model.setup import KEEP_DAGSTER_RUNS_FOR_NUM_DAYS
 
-@op(out = None)
-def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> None:
+@op
+def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: PostgresTargetDB) -> Nothing:
     """Check if setup and staging tables were created in target database"""
     
     # Check DB integrity
@@ -62,25 +68,23 @@ def maintain_db_integrity(context: OpExecutionContext, Postgres_Target_DB: Postg
             stats_table.insert(values = [val], log = context.log)
 
 
-# FOR HOUSEKEEPING
+@op(ins={"start": In(Nothing)})
+def dagster_housekeeping(context: OpExecutionContext) -> Nothing:
+    """Delete old Dagster run records"""
 
-# python import datetime
-# from dagster import DagsterInstance, RunsFilter
-
-# instance = DagsterInstance.get()
-# # Define the time threshold for what is old enough, this example uses 1 week
-# week_ago = datetime.datetime.now() - datetime.timedelta(days=7)
-# old_run_records = instance.get_run_records(
-#      filters=RunsFilter(created_before=week_ago),
-#      limit=10,  # Limit how many are fetched at a time, perform this operation in batches
-#      ascending=True,  # Start from the oldest )
-# # In this simple example we delete serially
-# # For higher throughput you could parallelize with threads
-# for record in old_run_records:
-#      # Delete all the database contents for this run
-#      instance.delete_run(record.dagster_run.run_id)
+    instance = DagsterInstance.get()
+    # Define the time threshold for old runs
+    time_threshold = datetime.datetime.now() - datetime.timedelta(days=KEEP_DAGSTER_RUNS_FOR_NUM_DAYS)
+    # Get old run records
+    old_run_records = instance.get_run_records(
+        filters=RunsFilter(created_before=time_threshold),
+        limit=10,   # Limit how many are fetched at a time, perform this operation in batches
+        ascending=True) # Start from the oldest
+    for record in old_run_records:
+        # Delete all the database contents for this run
+        instance.delete_run(record.dagster_run.run_id)
 
 
 @graph
 def maintain_db_integrity_graph() -> None:
-    maintain_db_integrity()
+    dagster_housekeeping(start = maintain_db_integrity())

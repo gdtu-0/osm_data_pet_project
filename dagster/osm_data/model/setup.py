@@ -3,6 +3,11 @@ from .schema import Table
 
 from decimal import Decimal
 
+# ========== Setup constants ==========
+
+# Number of days to store dagster run records
+KEEP_DAGSTER_RUNS_FOR_NUM_DAYS = 7
+
 # Setup tables and data
 
 # Initial locations
