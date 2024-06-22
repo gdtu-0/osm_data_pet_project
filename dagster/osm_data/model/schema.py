@@ -1,3 +1,4 @@
+from pandas import DataFrame # type: ignore
 from dataclasses import dataclass # type: ignore
 from typing import Optional, List, Dict, Tuple
 
@@ -70,6 +71,14 @@ class LocationSpec:
                 out[name] = value
         return out
 
+
+@dataclass
+class LocationData:
+    """Structure for transfering location data across pipeline"""
+
+    location_spec: LocationSpec
+    changeset_headers: Optional[DataFrame] = None
+    changeset_data: Optional[DataFrame] = None
 
 @dataclass
 class Table:
