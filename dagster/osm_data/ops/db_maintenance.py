@@ -7,10 +7,12 @@ from dagster import graph, op, OpExecutionContext, In, Nothing, DagsterInstance,
 from ..model.schema.location import LocationSpec
 from ..model.setup import INITIAL_LOCATIONS
 from ..model.setup import get_setup_tables_with_resource
+from .common import load_location_specs_from_db
 from ..resources import Target_PG_DB
 
 # Import constants
 from ..model.setup import KEEP_DAGSTER_RUNS_FOR_NUM_DAYS
+
 
 @op
 def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) -> Nothing:
@@ -54,8 +56,7 @@ def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_D
             coord_table.insert(values = [val], log = context.log, logging_enabled = True)
     
     # Load location specs
-    context.log.info("Select location spec records from DB")
-    location_specs = [LocationSpec(spec) for spec in coord_table.select(log = context.log, logging_enabled = True)]
+    location_specs = load_location_specs_from_db(resource = Target_PG_DB, log = context.log)
 
     # Check statistics integrity
     stats_table = setup_tables['location_load_stats']

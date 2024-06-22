@@ -1,7 +1,7 @@
 from pandas import DataFrame # type: ignore
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List, Tuple
+from typing import List
 
 # Import Dagster
 from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput
@@ -10,28 +10,22 @@ from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicO
 from ..resources import Target_PG_DB, OsmPublicApi
 from ..model.schema.location import LocationSpec, LocationData
 from ..model.setup import get_setup_tables_with_resource
+from .common import load_location_specs_from_db
 
 
 @op(out = DynamicOut(LocationSpec))
 def get_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) -> DynamicOutput[LocationSpec]:
     """Read location coordinates from setup table"""
 
-    # Dagster resources exist only in asset/op execution context
-    # so we have to link tabsles every run
-    setup_tables = get_setup_tables_with_resource(Target_PG_DB)
-
-    # Read location speccs table from DB
-    coord_table = setup_tables['location_coordinates_tbl']
-    context.log.info("Select location spec records from DB")
-    location_specs = [LocationSpec(spec) for spec in coord_table.select(log = context.log, logging_enabled = True)]
+    # Load location specs
+    location_specs = load_location_specs_from_db(resource = Target_PG_DB, log = context.log)
     
-    if location_specs:
-        context.log.info("Processing changeset info for locations:\n" + 
-            ",\n".join(f"{str(index)}: {spec.location_name}" for index, spec in enumerate(location_specs)))
+    context.log.info("Processing changeset info for locations:\n" + 
+        ",\n".join(f"{str(index)}: {spec.location_name}" for index, spec in enumerate(location_specs)))
 
-        # Yield dynamic output
-        for index, spec in enumerate(location_specs):
-            yield DynamicOutput(spec, mapping_key = f"location_spec_{index}")
+    # Yield dynamic output
+    for index, spec in enumerate(location_specs):
+        yield DynamicOutput(spec, mapping_key = f"location_spec_{index}")
 
 
 @op(ins = {"location_spec": In(LocationSpec)}, out = Out(LocationData))
