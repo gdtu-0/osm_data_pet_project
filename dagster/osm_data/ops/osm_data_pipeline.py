@@ -4,11 +4,11 @@ from decimal import Decimal
 from typing import List, Tuple
 
 # Import Dagster
-from dagster import op, graph, OpExecutionContext, Out, DynamicOut, DynamicOutput
+from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput
 
 # Import schema, setup and resources
 from ..resources import Target_PG_DB, OsmPublicApi
-from ..model.schema.location import LocationSpec
+from ..model.schema.location import LocationSpec, LocationData
 from ..model.setup import get_setup_tables_with_resource
 
 
@@ -27,15 +27,15 @@ def get_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) 
     
     if location_specs:
         context.log.info("Processing changeset info for locations:\n" + 
-            ",\n".join(f"{str(spec.index)}: {spec.location_name}" for spec in location_specs))
+            ",\n".join(f"{str(index)}: {spec.location_name}" for index, spec in enumerate(location_specs)))
 
         # Yield dynamic output
         for index, spec in enumerate(location_specs):
             yield DynamicOutput(spec, mapping_key = f"location_spec_{index}")
 
 
-@op(out = {"changeset_headers": Out(), "changeset_data": Out()})
-def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: LocationSpec) -> Tuple[DataFrame, DataFrame]:
+@op(ins = {"location_spec": In(LocationSpec)}, out = Out(LocationData))
+def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: LocationSpec) -> LocationData:
     """Get changeset headers and data from API for location"""
 
     bbox_boundaries_str = ( f"  min_lon: {str(location_spec.min_lon)}\tmin_lat: {str(location_spec.min_lat)}\n" +
@@ -84,13 +84,19 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
     context.log.info(f"Changeset headers line count: {changeset_headers_df.shape[0]}\n" + 
                      f"Changeset data line count: {changeset_data_df.shape[0]}")
 
+    # Pack results to LocationData object
+    location_data = LocationData(
+        location_spec = location_spec,
+        changeset_headers = changeset_headers_df,
+        changeset_data = changeset_data_df,
+    )
+
     # Return dataframes
-    return(changeset_headers_df, changeset_data_df)
+    return location_data
 
 
-@op(out = None)
-def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_PG_DB,
-                              changeset_headers_fan_in: List[DataFrame], changeset_data_fan_in: List[DataFrame]) -> None:
+@op(ins = {"location_data_fan_in": In(List[LocationData])}, out = None)
+def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_PG_DB, location_data_fan_in: List[LocationData]) -> None:
     """Collect data and save to DB"""
 
     # Dagster resources exist only in asset/op execution context
@@ -100,33 +106,30 @@ def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_
     # Add load timestamp to data
     load_timestamp = datetime.now(timezone.utc)
 
-    # Save changeset headers
-    headers_table = setup_tables['changeset_headers_tbl']
-    total_records = 0
-    for df in changeset_headers_fan_in:
-        df.insert(0, 'load_timestamp', load_timestamp)
-        total_records = total_records + df.shape[0]
-        headers_table.insert(
-            values = list(df.itertuples(index = False, name = None)),
-            log = context.log,
-            logging_enabled = False)
-    context.log.info(f"Changeset headers saved to DB.\nTotal records: {total_records}")
+    for location_data in location_data_fan_in:
+        spec = location_data.location_spec
 
-    # Save changeset data
-    data_table = setup_tables['changeset_data_tbl']
-    total_records = 0
-    for df in changeset_data_fan_in:
-        df.insert(0, 'load_timestamp', load_timestamp)
-        total_records = total_records + df.shape[0]
+        # Save changeset headers
+        headers_table = setup_tables['changeset_headers_tbl']
+        location_data.changeset_headers.insert(0, 'load_timestamp', load_timestamp)
+        headers_table.insert(
+            values = list(location_data.changeset_headers.itertuples(index = False, name = None)),
+            log = context.log, logging_enabled = False)
+        context.log.info(f"Changeset headers for location \'{spec.location_name}\' saved to DB.\n" +
+                         f"Total records: {location_data.changeset_headers.shape[0]}")
+
+        # Save changeset data
+        data_table = setup_tables['changeset_data_tbl']
+        location_data.changeset_data.insert(0, 'load_timestamp', load_timestamp)
         data_table.insert(
-            values = list(df.itertuples(index = False, name = None)),
-            log = context.log,
-            logging_enabled = False)
-    context.log.info(f"Changeset data saved to DB.\nTotal records: {total_records}")
+            values = list(location_data.changeset_data.itertuples(index = False, name = None)),
+            log = context.log, logging_enabled = False)
+        context.log.info(f"Changeset headers for location \'{spec.location_name}\' saved to DB.\n" +
+                         f"Total records: {location_data.changeset_data.shape[0]}")
 
 
 @graph
 def osm_data_pipeline_graph() -> None:
     location_specs = get_location_specs()
-    changeset_headers, changeset_data = location_specs.map(get_changeset_info_for_location)
-    collect_and_store_results(changeset_headers.collect(), changeset_data.collect())
+    location_data = location_specs.map(get_changeset_info_for_location)
+    collect_and_store_results(location_data.collect())
