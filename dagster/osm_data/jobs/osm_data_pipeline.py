@@ -1,10 +1,10 @@
 from dagster import ScheduleDefinition, DefaultScheduleStatus
 
-from ..ops.db_integrity import maintain_db_integrity_graph
+from ..ops.db_maintenance import db_maintenance_graph
 from ..ops.osm_data_pipeline import osm_data_pipeline_graph
 
 # DB integrity maintainence job
-db_integrity_maintainence_job = maintain_db_integrity_graph.to_job(name = 'db_integrity_maintainence')
+db_integrity_maintainence_job = db_maintenance_graph.to_job(name = 'db_maintenance')
 
 # DB integrity maintainence schedule
 db_integrity_maintainence_schedule = ScheduleDefinition(

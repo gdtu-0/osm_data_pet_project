@@ -86,5 +86,5 @@ def dagster_housekeeping(context: OpExecutionContext) -> Nothing:
 
 
 @graph
-def maintain_db_integrity_graph() -> None:
+def db_maintenance_graph() -> None:
     dagster_housekeeping(start = maintain_db_integrity())

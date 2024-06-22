@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 from datetime import datetime, timezone
 
 from ..model.setup import SETUP_TABLES
-from .db_integrity import maintain_db_integrity
+from .db_maintenance import maintain_db_integrity
 
 from . import LOCATION_COORDINATES_TBL
 from . import LOCATION_LOAD_STATS
