@@ -2,8 +2,8 @@ from decimal import Decimal
 from typing import Dict
 
 # Import schema
-from .schema import LocationSpec
-from .schema import Table
+from .schema.location import LocationSpec
+from .schema.table import Table
 
 # Import resources
 from ..resources import Target_PG_DB

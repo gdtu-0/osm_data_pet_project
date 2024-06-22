@@ -8,7 +8,7 @@ from dagster import op, graph, OpExecutionContext, Out, DynamicOut, DynamicOutpu
 
 # Import schema, setup and resources
 from ..resources import Target_PG_DB, OsmPublicApi
-from ..model.schema import LocationSpec
+from ..model.schema.location import LocationSpec
 from ..model.setup import get_setup_tables_with_resource
 
 

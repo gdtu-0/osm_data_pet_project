@@ -4,7 +4,7 @@ import datetime
 from dagster import graph, op, OpExecutionContext, In, Nothing, DagsterInstance, RunsFilter
 
 # Import schema, setup and resources
-from ..model.schema import LocationSpec
+from ..model.schema.location import LocationSpec
 from ..model.setup import INITIAL_LOCATIONS
 from ..model.setup import get_setup_tables_with_resource
 from ..resources import Target_PG_DB
