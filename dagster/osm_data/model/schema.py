@@ -27,12 +27,17 @@ class LocationSpec:
         'initial_load_start_from_ts',      # initial load start from
     )
 
-    def __init__(self, dict: Dict) -> None:
-        """LocationSpec is built from dict"""
+    def __update(self, dict: Dict) -> None:
+        """Update self from dict"""
 
         for name in self.__accepted_attr_names:
             if dict.get(name, 'NO_KEY') != 'NO_KEY':
                 setattr(self, name, dict[name])
+
+    def __init__(self, dict: Dict) -> None:
+        """LocationSpec is built from dict"""
+
+        self.__update(dict)
     
     def __eq__(self, other) -> bool:
         """Check LocationSpecs based on attribute values"""
@@ -49,6 +54,11 @@ class LocationSpec:
     
     def __str__(self) -> str:
         return("LocationSpec: {contents}".format(contents = str(self.to_dict())))
+
+    def update(self, dict: Dict) -> None:
+        """LocationSpec is updated from dict"""
+
+        self.__update(dict)
 
     def to_dict(self) -> Dict:
         """Convert location spec to dict"""
