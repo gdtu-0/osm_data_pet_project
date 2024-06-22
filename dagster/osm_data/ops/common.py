@@ -42,4 +42,4 @@ def load_location_specs_from_db(resource: Target_PG_DB, log: Optional[DagsterLog
         if location_specs_dict.get(stat.location_name, 'NO_KEY') != 'NO_KEY':
             location_specs_dict[stat.location_name].update(stat.to_dict())
     
-    return location_specs_dict.values()
+    return list(location_specs_dict.values())

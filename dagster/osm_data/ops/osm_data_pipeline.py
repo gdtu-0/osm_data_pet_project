@@ -13,22 +13,27 @@ from ..model.setup import get_setup_tables_with_resource
 from .common import load_location_specs_from_db
 
 
-@op(out = DynamicOut(LocationSpec))
-def get_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) -> DynamicOutput[LocationSpec]:
-    """Read location coordinates from setup table"""
+@op(out = Out(List[LocationSpec]))
+def load_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) -> List[LocationSpec]:
+    """Read location specs from database"""
 
-    # Load location specs
     location_specs = load_location_specs_from_db(resource = Target_PG_DB, log = context.log)
+    return location_specs
+
+
+@op(ins = {'location_specs': In(List[LocationSpec])}, out = DynamicOut(LocationSpec))
+def schedule_thread_runs(context: OpExecutionContext, location_specs: List[LocationSpec]) -> DynamicOutput[LocationSpec]:
+    """For each location spec schedule separate thread run"""
     
     context.log.info("Processing changeset info for locations:\n" + 
-        ",\n".join(f"{str(index)}: {spec.location_name}" for index, spec in enumerate(location_specs)))
+        "\n".join(f"{str(index)}: {spec.location_name}" for index, spec in enumerate(location_specs)))
 
     # Yield dynamic output
     for index, spec in enumerate(location_specs):
         yield DynamicOutput(spec, mapping_key = f"location_spec_{index}")
 
 
-@op(ins = {"location_spec": In(LocationSpec)}, out = Out(LocationData))
+@op(ins = {'location_spec': In(LocationSpec)}, out = Out(LocationData))
 def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: LocationSpec) -> LocationData:
     """Get changeset headers and data from API for location"""
 
@@ -89,7 +94,7 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
     return location_data
 
 
-@op(ins = {"location_data_fan_in": In(List[LocationData])}, out = None)
+@op(ins = {'location_data_fan_in': In(List[LocationData])}, out = None)
 def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_PG_DB, location_data_fan_in: List[LocationData]) -> None:
     """Collect data and save to DB"""
 
@@ -118,12 +123,12 @@ def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_
         data_table.insert(
             values = list(location_data.changeset_data.itertuples(index = False, name = None)),
             log = context.log, logging_enabled = False)
-        context.log.info(f"Changeset headers for location \'{spec.location_name}\' saved to DB.\n" +
+        context.log.info(f"Changeset data for location \'{spec.location_name}\' saved to DB.\n" +
                          f"Total records: {location_data.changeset_data.shape[0]}")
 
 
 @graph
 def osm_data_pipeline_graph() -> None:
-    location_specs = get_location_specs()
+    location_specs = schedule_thread_runs(load_location_specs())
     location_data = location_specs.map(get_changeset_info_for_location)
     collect_and_store_results(location_data.collect())
