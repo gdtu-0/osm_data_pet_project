@@ -62,7 +62,7 @@ def generate_run_request(job_name: str, location_specs: list) -> RunRequest:
 def osm_data_pipeline_sensor(context, postgres_db: PostgresDB):
     """Sensor to trigger pipeline runs"""
 
-    if not db_init_finnished:
+    if not db_init_finnished(resource = postgres_db):
         return SkipReason("Database is not consistent")
     else:
         # Load location specs
