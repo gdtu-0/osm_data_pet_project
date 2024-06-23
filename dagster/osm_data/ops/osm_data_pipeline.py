@@ -1,7 +1,7 @@
 from pandas import DataFrame # type: ignore
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List
+from typing import List, Tuple
 
 # Import Dagster
 from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput, Config
@@ -104,8 +104,8 @@ def get_changeset_info_for_location(context: OpExecutionContext, osm_public_api:
 
 
 # This op collects results form every thread and saves them to database
-@op(ins = {'location_data_fan_in': In(List[LocationData])}, out = None)
-def collect_and_store_results(context: OpExecutionContext, postgres_db: PostgresDB, location_data_fan_in: List[LocationData]) -> None:
+@op(ins = {'location_data_fan_in': In(List[LocationData])}, out = {'load_timestamp': Out(datetime), 'location_specs': Out(List[LocationSpec])})
+def collect_and_store_results(context: OpExecutionContext, postgres_db: PostgresDB, location_data_fan_in: List[LocationData]) -> Tuple[datetime, List[LocationSpec]]:
     """Collect data and save to DB"""
 
     # Dagster resources exist only in asset/op execution context
@@ -136,13 +136,21 @@ def collect_and_store_results(context: OpExecutionContext, postgres_db: Postgres
         context.log.info(f"Changeset data for location \'{spec.location_name}\' saved to DB.\n" +
                          f"Total records: {location_data.changeset_data.shape[0]}")
     
-    # Update location specs statistics and save to DB
     location_specs = list(location_data.location_spec for location_data in location_data_fan_in)
+    return load_timestamp, location_specs
+
+
+# This op updates load statistics and saves to DB
+@op(ins = {'update_timestamp': In(datetime), 'location_specs': In(List[LocationSpec])}, out = None)
+def update_statistics(context: OpExecutionContext, postgres_db: PostgresDB, update_timestamp: datetime, location_specs: List[LocationSpec]) -> None:
+    """Update location specs statistics and save to DB"""
+
     for spec in location_specs:
-        # load_timestamp
-        spec.update_timestamp = load_timestamp
+        # update_timestamp
+        spec.update_timestamp = update_timestamp
         # initial_load timestamp
         if spec.initial_load_required:
+            # Shift next time from for initial load
             spec.initial_load_start_from_ts = shift_ts_for_update_interval(spec.initial_load_start_from_ts)
             # Check if initial load is complete
             if spec.initial_load_start_from_ts >= spec.update_timestamp:
@@ -159,4 +167,5 @@ def collect_and_store_results(context: OpExecutionContext, postgres_db: Postgres
 def osm_data_pipeline_manual_run_graph() -> None:
     location_specs = schedule_thread_runs(load_location_specs())
     location_data = location_specs.map(get_changeset_info_for_location)
-    collect_and_store_results(location_data.collect())
+    update_timestamp, location_specs = collect_and_store_results(location_data.collect())
+    update_statistics(update_timestamp, location_specs)
