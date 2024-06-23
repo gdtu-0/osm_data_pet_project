@@ -1,12 +1,33 @@
 from typing import Optional, List, Tuple
+from datetime import datetime, timezone, timedelta
 
 # Import Dagster
 from dagster import DagsterLogManager
 
 # Import schema, setup and resources
 from ..model.schema.location import LocationSpec
+from ..model.setup import INITIAL_LOAD_NUM_DAYS
 from ..model.setup import get_setup_tables_with_resource
 from ..resources import PostgresDB
+
+
+def __calculate_load_from_ts() -> datetime:
+    """Calculate timestamp for initial load"""
+    
+    start_from_ts = datetime.now(timezone.utc) - timedelta(days = INITIAL_LOAD_NUM_DAYS)
+    start_from_ts = start_from_ts.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
+    return start_from_ts
+
+
+def __validate_location_spec_stats(location_spec:LocationSpec) -> None:
+    """Validate location spec statistic records"""
+
+    if location_spec.to_dict().get('initial_load_required') is None:
+        location_spec.update({'initial_load_required': True})
+    
+    load_from_ts = location_spec.to_dict().get('initial_load_start_from_ts')
+    if location_spec.initial_load_required and load_from_ts is None:
+        location_spec.update({'initial_load_start_from_ts': __calculate_load_from_ts()})
 
 
 def load_location_specs_from_db(resource: PostgresDB, log: Optional[DagsterLogManager] = None) -> List[LocationSpec]:
@@ -42,7 +63,7 @@ def load_location_specs_from_db(resource: PostgresDB, log: Optional[DagsterLogMa
         if location_specs_dict.get(stat.location_name):
             location_specs_dict[stat.location_name].update(stat.to_dict())
     
-    return list(location_specs_dict.values())
+    return list(map(__validate_location_spec_stats, location_specs_dict.values()))
 
 
 def save_load_stats_to_db(resource: PostgresDB, location_specs: List[LocationSpec], log: Optional[DagsterLogManager] = None) -> None:
@@ -76,4 +97,3 @@ def save_load_stats_to_db(resource: PostgresDB, location_specs: List[LocationSpe
         stats_table.insert(values = insert_values, log = log)
     else:
         stats_table.insert(values = insert_values)
-    
