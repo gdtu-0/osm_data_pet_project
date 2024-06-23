@@ -11,6 +11,7 @@ from ..resources import PostgresDB, OsmPublicApi
 from ..model.schema.location import LocationSpec, LocationData
 from .common import get_setup_tables_with_resource
 from .common import load_location_specs_from_db, save_load_stats_to_db
+from .common import shift_ts_for_update_interval
 
 
 @op(out = Out(List[LocationSpec]))
@@ -129,11 +130,21 @@ def collect_and_store_results(context: OpExecutionContext, postgres_db: Postgres
     # Update location specs statistics and save to DB
     location_specs = list(location_data.location_spec for location_data in location_data_fan_in)
     for spec in location_specs:
+        # load_timestamp
         spec.update_timestamp = load_timestamp
+        # initial_load timestamp
+        if spec.initial_load_required:
+            spec.initial_load_start_from_ts = shift_ts_for_update_interval(spec.initial_load_start_from_ts)
+            # Check if initial load is complete
+            if spec.initial_load_start_from_ts >= spec.update_timestamp:
+                spec.initial_load_required = False
+                spec.initial_load_start_from_ts = None
+    # Save results
     save_load_stats_to_db(
         resource = postgres_db,
         location_specs = location_specs,
         log = context.log)
+
 
 @graph
 def osm_data_pipeline_graph() -> None:

@@ -7,7 +7,7 @@ from dagster import DagsterLogManager
 # Import schema, setup and resources
 from ..model.schema.location import LocationSpec
 from ..model.schema.table import Table
-from ..model.setup import SETUP_TABLES, INITIAL_LOAD_NUM_DAYS
+from ..model.setup import SETUP_TABLES, INITIAL_LOAD_NUM_DAYS, OSM_DATA_UPDATE_INTERVAL_MINUTES
 from ..resources import PostgresDB
 
 
@@ -107,3 +107,9 @@ def save_load_stats_to_db(resource: PostgresDB, location_specs: List[LocationSpe
         stats_table.insert(values = insert_values, log = log)
     else:
         stats_table.insert(values = insert_values)
+
+
+def shift_ts_for_update_interval(timestamp: datetime) -> datetime:
+    """Shift timestamp forward for update interval"""
+
+    return timestamp + timedelta(minutes = OSM_DATA_UPDATE_INTERVAL_MINUTES)

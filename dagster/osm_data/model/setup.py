@@ -1,15 +1,11 @@
 from decimal import Decimal
-from typing import Dict
 
 # Import schema
 from .schema.location import LocationSpec
 from .schema.table import Table
 
-# Import resources
-from ..resources import PostgresDB
 
-
-# ============= Setup constants =============
+# ==================== Setup constants ====================
 
 # Number of days to store dagster run records
 KEEP_DAGSTER_RUNS_FOR_NUM_DAYS = 7
@@ -17,8 +13,10 @@ KEEP_DAGSTER_RUNS_FOR_NUM_DAYS = 7
 # Number of days to load initial data for location
 INITIAL_LOAD_NUM_DAYS = 7
 
+# Data update interval
+OSM_DATA_UPDATE_INTERVAL_MINUTES = 15
 
-# ========== Setup tables and data ==========
+# ============= Setup tables and initial data =============
 
 # Initial locations
 INITIAL_LOCATIONS = {
