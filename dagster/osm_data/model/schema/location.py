@@ -37,7 +37,7 @@ class LocationSpec:
         if type(self) != type(other):
             return False
         for name in self.__accepted_attr_names:
-            if getattr(self, name) != getattr(other, name):
+            if getattr(self, name, None) != getattr(other, name, None):
                 return False
         return True
     
@@ -57,7 +57,7 @@ class LocationSpec:
         
         out = {}
         for name in self.__accepted_attr_names:
-            value = getattr(self, name)
+            value = getattr(self, name, None)
             if value:
                 out[name] = value
         return out
