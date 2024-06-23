@@ -4,6 +4,7 @@ from .assets import ASSET_DEFINITIONS
 from .resources import PROJECT_RESOURCES
 from .jobs import PROJECT_JOBS
 from .jobs import PROJECT_SCHEDULES
+from .sensors import PROJECT_SENSORS
 
 # Set dagster definitions
 defs = Definitions(
@@ -11,4 +12,5 @@ defs = Definitions(
     resources = PROJECT_RESOURCES,
     jobs = PROJECT_JOBS,
     schedules = PROJECT_SCHEDULES,
+    sensors = PROJECT_SENSORS,
 )

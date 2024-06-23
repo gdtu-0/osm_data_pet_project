@@ -16,7 +16,11 @@ from .common import shift_ts_for_update_interval
 
 # Define run config to use in sensor launches
 class PipelineConfig(Config):
-    location_specs_d: Any  # We cant use LocationSpec here because of Dagster (dagster._core.errors.DagsterInvalidPythonicConfigDefinitionError)
+    # We cant use LocationSpec here
+    # because of Dagster (dagster._core.errors.DagsterInvalidPythonicConfigDefinitionError)
+    # Typing as list also doesnt work
+
+    location_specs: Any # List of location spec dict representations
 
 
 # This op is used in manual runs
@@ -33,7 +37,7 @@ def load_location_specs(context: OpExecutionContext, postgres_db: PostgresDB) ->
 def get_location_specs_from_config(context: OpExecutionContext, config: PipelineConfig) -> List[LocationSpec]:
     """Get location specs from config"""
 
-    location_specs = [LocationSpec(spec) for spec in config.location_specs_d]
+    location_specs = [LocationSpec(spec) for spec in config.location_specs]
     context.log.info("Started pipeline with config:\n" + "\n".join(str(spec) for spec in location_specs))
     return location_specs
 

@@ -1,30 +1,39 @@
 from pandas import DataFrame # type: ignore
 from dataclasses import dataclass # type: ignore
 from typing import Optional, Dict
+from datetime import datetime
+from decimal import Decimal
 
 class LocationSpec:
     """Location specification"""
 
-    # Kinda wrapper for dict that stores only keys from __accepted_names
+    # Silly attempt of implementing dict-like structure
+    # Stores only keys from __accepted_names, type convertion included
     # Attributes are added dynamically and can be accesed like ordinary object attributes
 
-    __accepted_attr_names = (
-        'location_name',   # location name
-        'min_lon',         # longitude of the left (westernmost) side of the bounding box
-        'min_lat',         # latitude of the bottom (southernmost) side of the bounding box
-        'max_lon',         # longitude of the right (easternmost) side of the bounding box
-        'max_lat',         # latitude of the top (northernmost) side of the bounding box
-        'update_timestamp',                # last update timestamp
-        'initial_load_required',           # initial load flag
-        'initial_load_start_from_ts',      # initial load start from
-    )
+    __accepted_attrs = {
+        'location_name': 'str',     # location name
+        'min_lon': 'decimal',       # longitude of the left (westernmost) side of the bounding box
+        'min_lat': 'decimal',       # latitude of the bottom (southernmost) side of the bounding box
+        'max_lon': 'decimal',       # longitude of the right (easternmost) side of the bounding box
+        'max_lat': 'decimal',       # latitude of the top (northernmost) side of the bounding box
+        'update_timestamp': 'datetime',            # last update timestamp
+        'initial_load_required': 'bool',           # initial load flag
+        'initial_load_start_from_ts': 'datetime',  # initial load start from
+    }
 
     def __update(self, dict: Dict) -> None:
         """Update self from dict"""
 
-        for name in self.__accepted_attr_names:
+        for name, type in self.__accepted_attrs.items():
             if dict.get(name):
-                setattr(self, name, dict[name])
+                val = dict[name]
+                # Handle serialised records
+                if type == 'decimal' and isinstance(val, str):
+                    val = Decimal(val)
+                elif type == 'datetime' and isinstance(val, str):
+                    val = datetime.fromisoformat(val)
+                setattr(self, name, val)
 
     def __init__(self, dict: Dict) -> None:
         """LocationSpec is built from dict"""
@@ -36,7 +45,7 @@ class LocationSpec:
 
         if type(self) != type(other):
             return False
-        for name in self.__accepted_attr_names:
+        for name in self.__accepted_attrs:
             if getattr(self, name, None) != getattr(other, name, None):
                 return False
         return True
@@ -56,10 +65,14 @@ class LocationSpec:
         """Convert location spec to dict"""
         
         out = {}
-        for name in self.__accepted_attr_names:
-            value = getattr(self, name, None)
-            if value:
-                out[name] = value
+        for name in self.__accepted_attrs.keys():
+            val = getattr(self, name, None)
+            if val:
+                if isinstance(val, Decimal):
+                    val = str('{0:f}'.format(val))
+                elif isinstance(val, datetime):
+                    val = str(val.isoformat())
+                out[name] = val
         return out
 
 
