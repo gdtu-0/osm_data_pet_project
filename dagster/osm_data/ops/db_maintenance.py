@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone, timedelta
 
 # Import Dagster
 from dagster import graph, op, OpExecutionContext, In, Nothing, DagsterInstance, RunsFilter
@@ -11,7 +11,7 @@ from .common import load_location_specs_from_db
 from ..resources import PostgresDB
 
 # Import constants
-from ..model.setup import KEEP_DAGSTER_RUNS_FOR_NUM_DAYS
+from ..model.setup import KEEP_CHANGESET_DATA_FOR_NUM_DAYS, KEEP_DAGSTER_RUNS_FOR_NUM_DAYS
 
 
 @op
@@ -71,12 +71,32 @@ def maintain_db_integrity(context: OpExecutionContext, postgres_db: PostgresDB) 
 
 
 @op(ins={"start": In(Nothing)})
+def db_housekeeping(context: OpExecutionContext, postgres_db: PostgresDB) -> Nothing:
+    """Delete old changeset data"""
+
+    # Dagster resources exist only in asset/op execution context
+    # so we have to link tabsles every run
+    setup_tables = get_setup_tables_with_resource(postgres_db)
+
+    # Define the time threshold for old data
+    time_threshold = datetime.now(timezone.utc) - timedelta(days = KEEP_CHANGESET_DATA_FOR_NUM_DAYS)
+
+    # Delete records from changeset headers table
+    table = setup_tables['changeset_headers_tbl']
+    table.delete_up_to_ts(fieldname = 'load_timestamp', timestamp = time_threshold, log = context.log)
+
+    # Delete records from changeset data table
+    table = setup_tables['changeset_data_tbl']
+    table.delete_up_to_ts(fieldname = 'load_timestamp', timestamp = time_threshold, log = context.log)
+
+
+@op(ins={"start": In(Nothing)})
 def dagster_housekeeping(context: OpExecutionContext) -> Nothing:
     """Delete old Dagster run records"""
 
     instance = DagsterInstance.get()
     # Define the time threshold for old runs
-    time_threshold = datetime.datetime.now() - datetime.timedelta(days = KEEP_DAGSTER_RUNS_FOR_NUM_DAYS)
+    time_threshold = datetime.now() - timedelta(days = KEEP_DAGSTER_RUNS_FOR_NUM_DAYS)
     # Get old run records
     old_run_records = instance.get_run_records(
         filters = RunsFilter(created_before = time_threshold),
@@ -90,4 +110,4 @@ def dagster_housekeeping(context: OpExecutionContext) -> Nothing:
 
 @graph
 def db_maintenance_graph() -> None:
-    dagster_housekeeping(start = maintain_db_integrity())
+    dagster_housekeeping(start = db_housekeeping(start = maintain_db_integrity()))

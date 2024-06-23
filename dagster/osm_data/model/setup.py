@@ -10,6 +10,9 @@ from .schema.table import Table
 # Number of days to store dagster run records
 KEEP_DAGSTER_RUNS_FOR_NUM_DAYS = 7
 
+# Number of days to store changeset data
+KEEP_CHANGESET_DATA_FOR_NUM_DAYS = 7
+
 # Number of days to load initial data for location
 INITIAL_LOAD_NUM_DAYS = 7
 

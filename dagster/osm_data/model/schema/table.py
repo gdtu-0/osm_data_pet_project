@@ -1,5 +1,6 @@
 from dataclasses import dataclass # type: ignore
 from typing import Optional, List, Dict, Tuple
+from datetime import datetime
 
 # Import Dagster
 from dagster import DagsterLogManager
@@ -103,3 +104,16 @@ class Table:
         self._db_resource.exec_insert(sql = sql_str, values = values)
         if log:
             log.info(f"SQL statement:\n\n{sql_str}\n  " + ",\n  ".join(str(elem) for elem in values))
+    
+
+    def delete_up_to_ts(self, fieldname: str, timestamp: datetime, log: Optional[DagsterLogManager] = None) -> None:
+        """Delete from table by fieldname up to timestamp"""
+
+        # Check if table has fieldname passed
+        if fieldname in self.columns:
+            delete_str = f"DELETE FROM {self.name}\n"
+            where_str = f"  WHERE {fieldname} <= \'{timestamp.isoformat()}\'"
+            sql_str = f"{delete_str}{where_str};"
+            self._db_resource.exec_sql_no_fetch(sql = sql_str)
+            if log:
+                log.info(f"SQL statement:\n\n{sql_str}")
