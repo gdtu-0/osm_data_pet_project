@@ -91,7 +91,7 @@ def osm_data_pipeline_sensor(context, postgres_db: PostgresDB):
             job_name = 'osm_data_pipeline_interval_run'
             # Check if previous run is finished
             if can_trigger_run(context, job_name):
-                context.log.info("{job_name }:\n" + "\n".join(str(elem) for elem in location_specs_interval_run))
+                context.log.info("f{job_name}:\n\n" + "\n".join(str(elem) for elem in location_specs_interval_run))
                 yield generate_run_request(job_name, location_specs_interval_run)
             else:
                 context.log.info(f"Skip run. Waiting for job \'{job_name}\' to finish")
@@ -102,7 +102,7 @@ def osm_data_pipeline_sensor(context, postgres_db: PostgresDB):
             job_name = 'osm_data_pipeline_initial_load'
             # Check if previous run is finished
             if can_trigger_run(context, job_name):
-                context.log.info("{job_name }:\n" + "\n".join(str(elem) for elem in location_specs_initial_load))
+                context.log.info("f{job_name}:\n\n" + "\n".join(str(elem) for elem in location_specs_initial_load))
                 yield generate_run_request(job_name, location_specs_initial_load)
             else:
                 context.log.info(f"Skip run. Waiting for job \'{job_name}\' to finish")
