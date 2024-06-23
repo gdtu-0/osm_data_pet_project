@@ -27,7 +27,7 @@ def db_init_finnished(resource = PostgresDB) -> bool:
     """Check if all tables were created"""
 
     tables = get_setup_tables_with_resource(resource = resource)
-    for table in tables:
+    for table in tables.values():
         if not table.exists:
             return False
     return True
