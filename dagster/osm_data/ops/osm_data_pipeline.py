@@ -10,7 +10,7 @@ from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicO
 from ..resources import Target_PG_DB, OsmPublicApi
 from ..model.schema.location import LocationSpec, LocationData
 from ..model.setup import get_setup_tables_with_resource
-from .common import load_location_specs_from_db
+from .common import load_location_specs_from_db, save_load_stats_to_db
 
 
 @op(out = Out(List[LocationSpec]))
@@ -125,7 +125,15 @@ def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_
             log = context.log, logging_enabled = False)
         context.log.info(f"Changeset data for location \'{spec.location_name}\' saved to DB.\n" +
                          f"Total records: {location_data.changeset_data.shape[0]}")
-
+    
+    # Update location specs statistics and save to DB
+    location_specs = list(location_data.location_spec for location_data in location_data_fan_in)
+    for spec in location_specs:
+        spec.update_timestamp = load_timestamp
+    save_load_stats_to_db(
+        resource = Target_PG_DB,
+        location_specs = location_specs,
+        log = context.log)
 
 @graph
 def osm_data_pipeline_graph() -> None:
