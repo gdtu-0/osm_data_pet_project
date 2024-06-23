@@ -7,8 +7,10 @@ from dagster import DagsterLogManager
 # Import schema, setup and resources
 from ..model.schema.location import LocationSpec
 from ..model.schema.table import Table
-from ..model.setup import SETUP_TABLES, INITIAL_LOAD_NUM_DAYS, OSM_DATA_UPDATE_INTERVAL_MINUTES
 from ..resources import PostgresDB
+
+# Import constants
+from ..model.setup import SETUP_TABLES, INITIAL_LOAD_NUM_DAYS, OSM_DATA_UPDATE_INTERVAL_MINUTES
 
 
 def __calculate_load_from_ts() -> datetime:
