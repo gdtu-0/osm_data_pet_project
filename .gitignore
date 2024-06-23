@@ -1,4 +1,5 @@
 *__pycache__*
 dbt/logs
 dbt/target
-dbt/.user.yml
+.cube
+.pg_data

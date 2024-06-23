@@ -61,8 +61,27 @@ services:
       retries: 5
     ports:
       - "5432:5432"
+    volumes:
+      - .pg_data:/var/lib/postgresql/data
     networks:
       - osm_data_pet_project_network
+  
+  cube:
+    image: cubejs/cube:latest
+    container_name: cube
+    restart: always
+    environment:
+      - CUBEJS_DEV_MODE=true
+    ports:
+      - "4000:4000"
+      - "15432:15432"
+    volumes:
+      - .cube:/cube/conf
+    networks:
+      - osm_data_pet_project_network
+    depends_on:
+      osm_data_db:
+        condition: service_healthy
 
 networks:
   osm_data_pet_project_network:
