@@ -19,7 +19,7 @@ def __calculate_load_from_ts() -> datetime:
     return start_from_ts
 
 
-def __validate_location_spec_stats(location_spec:LocationSpec) -> None:
+def __validate_location_spec_stats(location_spec:LocationSpec) -> LocationSpec:
     """Validate location spec statistic records"""
 
     if location_spec.to_dict().get('initial_load_required') is None:
@@ -28,6 +28,8 @@ def __validate_location_spec_stats(location_spec:LocationSpec) -> None:
     load_from_ts = location_spec.to_dict().get('initial_load_start_from_ts')
     if location_spec.initial_load_required and load_from_ts is None:
         location_spec.update({'initial_load_start_from_ts': __calculate_load_from_ts()})
+    
+    return location_spec
 
 
 def get_setup_tables_with_resource(resource: PostgresDB) -> Dict[str, Table]:
