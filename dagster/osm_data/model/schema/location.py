@@ -7,8 +7,9 @@ from decimal import Decimal
 class LocationSpec:
     """Location specification"""
 
+    # If only i knew about NamedTuple at the moment of writing it...
     # Silly attempt of implementing dict-like structure
-    # Stores only keys from __accepted_names, type convertion included
+    # Stores only keys from __accepted_attrs, type convertion included
     # Attributes are added dynamically and can be accesed like ordinary object attributes
 
     __accepted_attrs = {
