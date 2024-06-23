@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Tuple
 from dagster import DagsterLogManager
 
 # Import resource definition
-from ...resources.pg_target_db import Target_PG_DB
+from ...resources.postgres_db import PostgresDB
 
 @dataclass
 class Table:
@@ -20,7 +20,7 @@ class Table:
     name: str   # Database table name
     column_specs: Dict  # Dict structure of table fields where key is a field name
                         # and value is column definition
-    _db_resource: Optional[Target_PG_DB] = None  # Database resource
+    _db_resource: Optional[PostgresDB] = None  # Database resource
     
     def __post_init__(self) -> None:
         """Post init hook"""
@@ -39,7 +39,7 @@ class Table:
         return "WHERE\n  " + " OR\n  ".join(self.__dict_to_where_cond(elem) for elem in where)
 
     
-    def link_to_resource(self, resource: Target_PG_DB) -> None:
+    def link_to_resource(self, resource: PostgresDB) -> None:
         """Get DB resource and check if table exists"""
         
         self._db_resource = resource

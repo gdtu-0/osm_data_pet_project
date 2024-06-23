@@ -7,17 +7,17 @@ from typing import List
 from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput
 
 # Import schema, setup and resources
-from ..resources import Target_PG_DB, OsmPublicApi
+from ..resources import PostgresDB, OsmPublicApi
 from ..model.schema.location import LocationSpec, LocationData
 from ..model.setup import get_setup_tables_with_resource
 from .common import load_location_specs_from_db, save_load_stats_to_db
 
 
 @op(out = Out(List[LocationSpec]))
-def load_location_specs(context: OpExecutionContext, Target_PG_DB: Target_PG_DB) -> List[LocationSpec]:
+def load_location_specs(context: OpExecutionContext, postgres_db: PostgresDB) -> List[LocationSpec]:
     """Read location specs from database"""
 
-    location_specs = load_location_specs_from_db(resource = Target_PG_DB, log = context.log)
+    location_specs = load_location_specs_from_db(resource = postgres_db, log = context.log)
     return location_specs
 
 
@@ -34,7 +34,7 @@ def schedule_thread_runs(context: OpExecutionContext, location_specs: List[Locat
 
 
 @op(ins = {'location_spec': In(LocationSpec)}, out = Out(LocationData))
-def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API: OsmPublicApi, location_spec: LocationSpec) -> LocationData:
+def get_changeset_info_for_location(context: OpExecutionContext, osm_public_api: OsmPublicApi, location_spec: LocationSpec) -> LocationData:
     """Get changeset headers and data from API for location"""
 
     bbox_boundaries_str = ( f"  min_lon: {str(location_spec.min_lon)}\tmin_lat: {str(location_spec.min_lat)}\n" +
@@ -42,7 +42,7 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
     context.log.info(f"Thread for location \'{location_spec.location_name}\'\nBBox boundaries are:\n{bbox_boundaries_str}")
 
     # Get changeset headers
-    changeset_headers_df = OSM_Public_API.get_closed_changesets_by_bbox(
+    changeset_headers_df = osm_public_api.get_closed_changesets_by_bbox(
         min_lon = location_spec.min_lon, min_lat = location_spec.min_lat,
         max_lon = location_spec.max_lon, max_lat = location_spec.max_lat)
 
@@ -77,7 +77,7 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
         changeset_headers = changeset_headers_df)
 
     # Get changeset data
-    changeset_data_df = OSM_Public_API.get_changeset_data(
+    changeset_data_df = osm_public_api.get_changeset_data(
         changeset_ids = changeset_headers_df['changeset_id'].tolist())
 
     context.log.info(f"Changeset headers line count: {changeset_headers_df.shape[0]}\n" + 
@@ -95,12 +95,12 @@ def get_changeset_info_for_location(context: OpExecutionContext, OSM_Public_API:
 
 
 @op(ins = {'location_data_fan_in': In(List[LocationData])}, out = None)
-def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_PG_DB, location_data_fan_in: List[LocationData]) -> None:
+def collect_and_store_results(context: OpExecutionContext, postgres_db: PostgresDB, location_data_fan_in: List[LocationData]) -> None:
     """Collect data and save to DB"""
 
     # Dagster resources exist only in asset/op execution context
     # so we have to link tabsles every run
-    setup_tables = get_setup_tables_with_resource(Target_PG_DB)
+    setup_tables = get_setup_tables_with_resource(postgres_db)
 
     # Add load timestamp to data
     load_timestamp = datetime.now(timezone.utc)
@@ -131,7 +131,7 @@ def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_
     for spec in location_specs:
         spec.update_timestamp = load_timestamp
     save_load_stats_to_db(
-        resource = Target_PG_DB,
+        resource = postgres_db,
         location_specs = location_specs,
         log = context.log)
 

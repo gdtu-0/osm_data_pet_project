@@ -4,14 +4,14 @@ from dagster import EnvVar
 
 from dagster_dbt import DbtCliResource # type: ignore
 from .osm_public_api import OsmPublicApi
-from .pg_target_db import Target_PG_DB
+from .postgres_db import PostgresDB
 
 DBT_PROJECT_DIR = Path(__file__).joinpath("..", "..", "..", "dbt").resolve()
 
 # List of all project resources
 PROJECT_RESOURCES = {
-    "OSM_Public_API": OsmPublicApi(),
-    "Target_PG_DB": Target_PG_DB(
+    "osm_public_api": OsmPublicApi(),
+    "postgres_db": PostgresDB(
         dbname = EnvVar('TARGET_DB_NAME'),
         username = EnvVar('TARGET_DB_USER'),
         password = EnvVar('TARGET_DB_PASSWORD'),

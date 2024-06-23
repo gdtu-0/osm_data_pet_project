@@ -6,10 +6,10 @@ from dagster import DagsterLogManager
 # Import schema, setup and resources
 from ..model.schema.location import LocationSpec
 from ..model.setup import get_setup_tables_with_resource
-from ..resources import Target_PG_DB
+from ..resources import PostgresDB
 
 
-def load_location_specs_from_db(resource: Target_PG_DB, log: Optional[DagsterLogManager] = None) -> List[LocationSpec]:
+def load_location_specs_from_db(resource: PostgresDB, log: Optional[DagsterLogManager] = None) -> List[LocationSpec]:
     """Load location specs from database"""
 
     # Dagster resources exist only in asset/op execution context
@@ -45,7 +45,7 @@ def load_location_specs_from_db(resource: Target_PG_DB, log: Optional[DagsterLog
     return list(location_specs_dict.values())
 
 
-def save_load_stats_to_db(resource: Target_PG_DB, location_specs: List[LocationSpec], log: Optional[DagsterLogManager] = None) -> None:
+def save_load_stats_to_db(resource: PostgresDB, location_specs: List[LocationSpec], log: Optional[DagsterLogManager] = None) -> None:
     """Save load stats to database"""
 
     # Dagster resources exist only in asset/op execution context

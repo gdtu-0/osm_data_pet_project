@@ -6,7 +6,7 @@ from .schema.location import LocationSpec
 from .schema.table import Table
 
 # Import resources
-from ..resources import Target_PG_DB
+from ..resources import PostgresDB
 
 
 # ============= Setup constants =============
@@ -90,7 +90,7 @@ SETUP_TABLES = {
     )
 }
 
-def get_setup_tables_with_resource(resource: Target_PG_DB) -> Dict[str, Table]:
+def get_setup_tables_with_resource(resource: PostgresDB) -> Dict[str, Table]:
     """Dagster resources exist only in asset/op execution context
     so we have to link tabsles every run"""
 
