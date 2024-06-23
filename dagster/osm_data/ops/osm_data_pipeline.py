@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List
 
 # Import Dagster
-from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput
+from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput, Config
 
 # Import schema, setup and resources
 from ..resources import PostgresDB, OsmPublicApi
@@ -14,6 +14,12 @@ from .common import load_location_specs_from_db, save_load_stats_to_db
 from .common import shift_ts_for_update_interval
 
 
+# Define run config to use in sensor launches
+class PipelineConfig(Config):
+    location_specs: List[LocationSpec]
+
+
+# This op is used in manual runs
 @op(out = Out(List[LocationSpec]))
 def load_location_specs(context: OpExecutionContext, postgres_db: PostgresDB) -> List[LocationSpec]:
     """Read location specs from database"""
@@ -22,6 +28,7 @@ def load_location_specs(context: OpExecutionContext, postgres_db: PostgresDB) ->
     return location_specs
 
 
+# This op forks a thread for every location spec
 @op(ins = {'location_specs': In(List[LocationSpec])}, out = DynamicOut(LocationSpec))
 def schedule_thread_runs(context: OpExecutionContext, location_specs: List[LocationSpec]) -> DynamicOutput[LocationSpec]:
     """For each location spec schedule separate thread run"""
@@ -34,6 +41,7 @@ def schedule_thread_runs(context: OpExecutionContext, location_specs: List[Locat
         yield DynamicOutput(spec, mapping_key = f"location_spec_{index}")
 
 
+# This op gets and parces data from OSM API
 @op(ins = {'location_spec': In(LocationSpec)}, out = Out(LocationData))
 def get_changeset_info_for_location(context: OpExecutionContext, osm_public_api: OsmPublicApi, location_spec: LocationSpec) -> LocationData:
     """Get changeset headers and data from API for location"""
@@ -95,6 +103,7 @@ def get_changeset_info_for_location(context: OpExecutionContext, osm_public_api:
     return location_data
 
 
+# This op collects results form every thread and saves them to database
 @op(ins = {'location_data_fan_in': In(List[LocationData])}, out = None)
 def collect_and_store_results(context: OpExecutionContext, postgres_db: PostgresDB, location_data_fan_in: List[LocationData]) -> None:
     """Collect data and save to DB"""
