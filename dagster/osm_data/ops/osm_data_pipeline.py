@@ -9,7 +9,7 @@ from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicO
 # Import schema, setup and resources
 from ..resources import PostgresDB, OsmPublicApi
 from ..model.schema.location import LocationSpec, LocationData
-from ..model.setup import get_setup_tables_with_resource
+from .common import get_setup_tables_with_resource
 from .common import load_location_specs_from_db, save_load_stats_to_db
 
 

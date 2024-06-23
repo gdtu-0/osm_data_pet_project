@@ -92,12 +92,3 @@ SETUP_TABLES = {
         }
     )
 }
-
-def get_setup_tables_with_resource(resource: PostgresDB) -> Dict[str, Table]:
-    """Dagster resources exist only in asset/op execution context
-    so we have to link tabsles every run"""
-
-    setup_tables = SETUP_TABLES
-    for table in setup_tables.values():
-        table.link_to_resource(resource)
-    return(setup_tables)

@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List, Dict, Tuple
 from datetime import datetime, timezone, timedelta
 
 # Import Dagster
@@ -6,8 +6,8 @@ from dagster import DagsterLogManager
 
 # Import schema, setup and resources
 from ..model.schema.location import LocationSpec
-from ..model.setup import INITIAL_LOAD_NUM_DAYS
-from ..model.setup import get_setup_tables_with_resource
+from ..model.schema.table import Table
+from ..model.setup import SETUP_TABLES, INITIAL_LOAD_NUM_DAYS
 from ..resources import PostgresDB
 
 
@@ -28,6 +28,16 @@ def __validate_location_spec_stats(location_spec:LocationSpec) -> None:
     load_from_ts = location_spec.to_dict().get('initial_load_start_from_ts')
     if location_spec.initial_load_required and load_from_ts is None:
         location_spec.update({'initial_load_start_from_ts': __calculate_load_from_ts()})
+
+
+def get_setup_tables_with_resource(resource: PostgresDB) -> Dict[str, Table]:
+    """Dagster resources exist only in asset/op execution context
+    so we have to link tabsles every run"""
+
+    setup_tables = SETUP_TABLES
+    for table in setup_tables.values():
+        table.link_to_resource(resource)
+    return(setup_tables)
 
 
 def load_location_specs_from_db(resource: PostgresDB, log: Optional[DagsterLogManager] = None) -> List[LocationSpec]:

@@ -6,7 +6,7 @@ from dagster import graph, op, OpExecutionContext, In, Nothing, DagsterInstance,
 # Import schema, setup and resources
 from ..model.schema.location import LocationSpec
 from ..model.setup import INITIAL_LOCATIONS
-from ..model.setup import get_setup_tables_with_resource
+from .common import get_setup_tables_with_resource
 from .common import load_location_specs_from_db
 from ..resources import PostgresDB
 
