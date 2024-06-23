@@ -147,7 +147,7 @@ def collect_and_store_results(context: OpExecutionContext, postgres_db: Postgres
 
 
 @graph
-def osm_data_pipeline_graph() -> None:
+def osm_data_pipeline_manual_run_graph() -> None:
     location_specs = schedule_thread_runs(load_location_specs())
     location_data = location_specs.map(get_changeset_info_for_location)
     collect_and_store_results(location_data.collect())
