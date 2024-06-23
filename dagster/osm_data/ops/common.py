@@ -20,7 +20,7 @@ def load_location_specs_from_db(resource: Target_PG_DB, log: Optional[DagsterLog
     coord_table = setup_tables['location_coordinates_tbl']
     if log:
         log.info("Select location coordinates from DB")
-        location_specs = [LocationSpec(row) for row in coord_table.select(log = log, logging_enabled = True)]
+        location_specs = [LocationSpec(row) for row in coord_table.select(log = log)]
     else:
         location_specs = [LocationSpec(row) for row in coord_table.select()]
     
@@ -33,7 +33,7 @@ def load_location_specs_from_db(resource: Target_PG_DB, log: Optional[DagsterLog
     stats_table = setup_tables['location_load_stats']
     if log:
         log.info("Select location load stat records from DB")
-        load_stats = [LocationSpec(row) for row in stats_table.select(log = log, logging_enabled = True)]
+        load_stats = [LocationSpec(row) for row in stats_table.select(log = log)]
     else:
         load_stats = [LocationSpec(row) for row in stats_table.select()]
     
@@ -56,7 +56,7 @@ def save_load_stats_to_db(resource: Target_PG_DB, location_specs: List[LocationS
     where_cond = list({'location_name': spec.location_name} for spec in location_specs)
     if log:
         log.info("Delete old statistic records and insert new ones")
-        stats_table.delete(where = where_cond, log = log, logging_enabled = True)
+        stats_table.delete(where = where_cond, log = log)
     else:
         stats_table.delete(where = where_cond)
 
@@ -73,7 +73,7 @@ def save_load_stats_to_db(resource: Target_PG_DB, location_specs: List[LocationS
     
     insert_values = list(map(construct_insert_value, location_specs))
     if log:
-        stats_table.insert(values = insert_values, log = log, logging_enabled = True)
+        stats_table.insert(values = insert_values, log = log)
     else:
         stats_table.insert(values = insert_values)
     

@@ -113,7 +113,7 @@ def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_
         location_data.changeset_headers.insert(0, 'load_timestamp', load_timestamp)
         headers_table.insert(
             values = list(location_data.changeset_headers.itertuples(index = False, name = None)),
-            log = context.log, logging_enabled = False)
+            log = context.log)
         context.log.info(f"Changeset headers for location \'{spec.location_name}\' saved to DB.\n" +
                          f"Total records: {location_data.changeset_headers.shape[0]}")
 
@@ -122,7 +122,7 @@ def collect_and_store_results(context: OpExecutionContext, Target_PG_DB: Target_
         location_data.changeset_data.insert(0, 'load_timestamp', load_timestamp)
         data_table.insert(
             values = list(location_data.changeset_data.itertuples(index = False, name = None)),
-            log = context.log, logging_enabled = False)
+            log = context.log)
         context.log.info(f"Changeset data for location \'{spec.location_name}\' saved to DB.\n" +
                          f"Total records: {location_data.changeset_data.shape[0]}")
     

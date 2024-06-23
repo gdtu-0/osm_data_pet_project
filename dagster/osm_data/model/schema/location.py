@@ -23,7 +23,7 @@ class LocationSpec:
         """Update self from dict"""
 
         for name in self.__accepted_attr_names:
-            if dict.get(name, 'NO_KEY') != 'NO_KEY':
+            if dict.get(name):
                 setattr(self, name, dict[name])
 
     def __init__(self, dict: Dict) -> None:
@@ -37,7 +37,7 @@ class LocationSpec:
         if type(self) != type(other):
             return False
         for name in self.__accepted_attr_names:
-            if getattr(self, name, 'NO_KEY') != getattr(other, name, 'NO_KEY'):
+            if getattr(self, name) != getattr(other, name):
                 return False
         return True
     
@@ -57,8 +57,8 @@ class LocationSpec:
         
         out = {}
         for name in self.__accepted_attr_names:
-            value = getattr(self, name, 'NO_KEY')
-            if value != 'NO_KEY':
+            value = getattr(self, name)
+            if value:
                 out[name] = value
         return out
 

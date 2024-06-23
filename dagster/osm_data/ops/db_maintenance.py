@@ -28,7 +28,7 @@ def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_D
         if not table.exists:
             context.log.info(f"Table \'{table.name}\' is missing in DB")
             # Create table
-            table.create(log = context.log, logging_enabled = True)
+            table.create(log = context.log)
 
     # Fill in initial locations if necessary
     coord_table = setup_tables['location_coordinates_tbl']
@@ -37,7 +37,7 @@ def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_D
         
         # Read location table from DB
         where_cond = {'location_name': spec.location_name}
-        result = coord_table.select(where = [where_cond], log = context.log, logging_enabled = False)
+        result = coord_table.select(where = [where_cond], log = context.log)
         if result:
             # Result is passed as list of dicts
             # We need only first row assuming location names do not duplicate
@@ -51,8 +51,8 @@ def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_D
             # Insert(replace) new record
             context.log.info(f"Update location spec record for location \'{spec.location_name}\' in table \'{coord_table.name}\'")
             val = (spec.location_name, spec.min_lon, spec.min_lat, spec.max_lon, spec.max_lat)
-            coord_table.delete(where = [where_cond], log = context.log, logging_enabled = True)
-            coord_table.insert(values = [val], log = context.log, logging_enabled = True)
+            coord_table.delete(where = [where_cond], log = context.log)
+            coord_table.insert(values = [val], log = context.log)
     
     # Load location specs
     location_specs = load_location_specs_from_db(resource = Target_PG_DB, log = context.log)
@@ -61,12 +61,12 @@ def maintain_db_integrity(context: OpExecutionContext, Target_PG_DB: Target_PG_D
     stats_table = setup_tables['location_load_stats']
     for spec in location_specs:
         where_cond = {'location_name': spec.location_name}
-        result = stats_table.select(where = [where_cond], log = context.log, logging_enabled = False)
+        result = stats_table.select(where = [where_cond], log = context.log)
         if not result:
             # No records for this location, insert new one
             context.log.info(f"Create location spec update statistics record for location \'{spec.location_name}\' in table \'{coord_table.name}\'")
             val = (spec.location_name, None, None, None)
-            stats_table.insert(values = [val], log = context.log, logging_enabled = True)
+            stats_table.insert(values = [val], log = context.log)
     context.log.info("DB integrity check finished")
 
 
