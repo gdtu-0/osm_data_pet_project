@@ -1,7 +1,7 @@
 from pandas import DataFrame # type: ignore
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 # Import Dagster
 from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput, Config
@@ -16,7 +16,7 @@ from .common import shift_ts_for_update_interval
 
 # Define run config to use in sensor launches
 class PipelineConfig(Config):
-    location_specs: List[LocationSpec]
+    location_specs_d: Any  # We cant use LocationSpec here because of Dagster (dagster._core.errors.DagsterInvalidPythonicConfigDefinitionError)
 
 
 # This op is used in manual runs
@@ -25,6 +25,16 @@ def load_location_specs(context: OpExecutionContext, postgres_db: PostgresDB) ->
     """Read location specs from database"""
 
     location_specs = load_location_specs_from_db(resource = postgres_db, log = context.log)
+    return location_specs
+
+
+# This op is used in auto runs from sensor
+@op(out = Out(List[LocationSpec]))
+def get_location_specs_from_config(context: OpExecutionContext, config: PipelineConfig) -> List[LocationSpec]:
+    """Get location specs from config"""
+
+    location_specs = [LocationSpec(spec) for spec in config.location_specs_d]
+    context.log.info("Started pipeline with config:\n" + "\n".join(str(spec) for spec in location_specs))
     return location_specs
 
 
@@ -166,6 +176,14 @@ def update_statistics(context: OpExecutionContext, postgres_db: PostgresDB, upda
 @graph
 def osm_data_pipeline_manual_run_graph() -> None:
     location_specs = schedule_thread_runs(load_location_specs())
+    location_data = location_specs.map(get_changeset_info_for_location)
+    update_timestamp, location_specs = collect_and_store_results(location_data.collect())
+    update_statistics(update_timestamp, location_specs)
+
+
+@graph
+def osm_data_pipeline_auto_run_graph() -> None:
+    location_specs = schedule_thread_runs(get_location_specs_from_config())
     location_data = location_specs.map(get_changeset_info_for_location)
     update_timestamp, location_specs = collect_and_store_results(location_data.collect())
     update_statistics(update_timestamp, location_specs)
