@@ -1,10 +1,9 @@
 from dagster import Definitions
-
 from .assets import ASSET_DEFINITIONS
 from .resources import PROJECT_RESOURCES
-from .jobs import PROJECT_JOBS
-from .jobs import PROJECT_SCHEDULES
+from .jobs import PROJECT_JOBS, PROJECT_SCHEDULES
 from .sensors import PROJECT_SENSORS
+
 
 # Set dagster definitions
 defs = Definitions(

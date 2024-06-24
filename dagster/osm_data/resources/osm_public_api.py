@@ -1,15 +1,12 @@
-from dagster import ConfigurableResource
-
 import requests
 from requests import Response
-
 from xml.etree.ElementTree import XMLParser
 from pandas import DataFrame # type: ignore
-
+from dagster import ConfigurableResource
 from typing import Optional
 from datetime import datetime
-
 from decimal import Decimal
+
 
 OSM_API_URL_BASE = "https://api.openstreetmap.org/api/0.6"
 

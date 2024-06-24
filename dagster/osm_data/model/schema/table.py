@@ -1,11 +1,7 @@
 from dataclasses import dataclass # type: ignore
 from typing import Optional, List, Dict, Tuple
 from datetime import datetime
-
-# Import Dagster
 from dagster import DagsterLogManager
-
-# Import resource definition
 from ...resources.postgres_db import PostgresDB
 
 @dataclass

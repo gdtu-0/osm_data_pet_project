@@ -1,10 +1,9 @@
-from dagster import ConfigurableResource
-
 import functools
 import psycopg2 # type: ignore
 import psycopg2.extras # type: ignore
-
 from typing import Optional, List, Tuple
+from dagster import ConfigurableResource
+
 
 class PostgresDB(ConfigurableResource):
     """Dagster resource definition for target Postgres database"""

@@ -1,17 +1,22 @@
 from datetime import datetime, timezone, timedelta
-
-# Import Dagster
-from dagster import graph, op, OpExecutionContext, In, Nothing, DagsterInstance, RunsFilter
-
-# Import schema, setup and resources
 from ..model.schema.location import LocationSpec
-from ..model.setup import INITIAL_LOCATIONS
+from ..model.initial_locations import INITIAL_LOCATIONS
 from .common import get_setup_tables_with_resource
 from .common import load_location_specs_from_db
 from ..resources import PostgresDB
-
-# Import constants
-from ..model.setup import KEEP_CHANGESET_DATA_FOR_NUM_DAYS, KEEP_DAGSTER_RUNS_FOR_NUM_DAYS
+from ..model.settings import (
+    KEEP_CHANGESET_DATA_FOR_NUM_DAYS,
+    KEEP_DAGSTER_RUNS_FOR_NUM_DAYS,
+)
+from dagster import (
+    graph,
+    op,
+    OpExecutionContext,
+    In,
+    Nothing,
+    DagsterInstance,
+    RunsFilter,
+)
 
 
 @op

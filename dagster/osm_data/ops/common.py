@@ -1,16 +1,14 @@
 from typing import Optional, List, Dict, Tuple
 from datetime import datetime, timezone, timedelta
-
-# Import Dagster
 from dagster import DagsterLogManager
-
-# Import schema, setup and resources
 from ..model.schema.location import LocationSpec
 from ..model.schema.table import Table
 from ..resources import PostgresDB
-
-# Import constants
-from ..model.setup import SETUP_TABLES, INITIAL_LOAD_NUM_DAYS, OSM_DATA_UPDATE_INTERVAL_MINUTES
+from ..model.settings import (
+    SETUP_TABLES,
+    INITIAL_LOAD_NUM_DAYS,
+    OSM_DATA_UPDATE_INTERVAL_MINUTES
+)
 
 
 def __calculate_load_from_ts() -> datetime:

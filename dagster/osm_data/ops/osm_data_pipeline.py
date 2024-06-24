@@ -2,16 +2,24 @@ from pandas import DataFrame # type: ignore
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List, Tuple, Any
-
-# Import Dagster
-from dagster import op, graph, OpExecutionContext, In, Out, DynamicOut, DynamicOutput, Config
-
-# Import schema, setup and resources
 from ..resources import PostgresDB, OsmPublicApi
 from ..model.schema.location import LocationSpec, LocationData
-from .common import get_setup_tables_with_resource
-from .common import load_location_specs_from_db, save_load_stats_to_db
-from .common import shift_ts_for_update_interval
+from dagster import (
+    op,
+    graph,
+    OpExecutionContext,
+    In,
+    Out,
+    DynamicOut, 
+    DynamicOutput,
+    Config,
+)
+from .common import (
+    get_setup_tables_with_resource,
+    load_location_specs_from_db,
+    save_load_stats_to_db,
+    shift_ts_for_update_interval,
+)
 
 
 # Define run config to use in sensor launches

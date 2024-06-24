@@ -1,5 +1,5 @@
-from .osm_data_pipeline import osm_data_pipeline_sensors
+from .osm_data_pipeline_sensor import osm_data_pipeline_sensor
 
 PROJECT_SENSORS = [
-    *osm_data_pipeline_sensors,
+    osm_data_pipeline_sensor,
 ]

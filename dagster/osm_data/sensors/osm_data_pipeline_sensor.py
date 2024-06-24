@@ -1,20 +1,25 @@
 from datetime import datetime, timezone, timedelta
-
-# Import Dagster
-from dagster import sensor, RunRequest, RunConfig, SkipReason, DefaultSensorStatus, RunsFilter, DagsterRunStatus
-
-# Import jobs and config
-from ..jobs.osm_data_pipeline import osm_data_pipeline_interval_run_job
-from ..jobs.osm_data_pipeline import osm_data_pipeline_initial_load_job
 from ..ops.osm_data_pipeline import PipelineConfig
-
-# Import schema, setup and resources
 from ..resources import PostgresDB
-from ..ops.common import load_location_specs_from_db
-from ..ops.common import get_setup_tables_with_resource
+from ..model.settings import OSM_DATA_UPDATE_INTERVAL_MINUTES
+from dagster import (
+    sensor,
+    RunRequest,
+    RunConfig,
+    SkipReason,
+    DefaultSensorStatus,
+    RunsFilter,
+    DagsterRunStatus,
+)
+from ..jobs.osm_data_pipeline_jobs import (
+    osm_data_pipeline_interval_run_job,
+    osm_data_pipeline_initial_load_job,
+)
+from ..ops.common import (
+    load_location_specs_from_db, 
+    get_setup_tables_with_resource
+)
 
-# Import constants
-from ..model.setup import OSM_DATA_UPDATE_INTERVAL_MINUTES
 
 # List of statses to trigger run
 FINISHED_STATUSES = [
@@ -22,6 +27,7 @@ FINISHED_STATUSES = [
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.CANCELED,
 ]
+
 
 def db_init_finnished(resource = PostgresDB) -> bool:
     """Check if all tables were created"""
@@ -32,6 +38,7 @@ def db_init_finnished(resource = PostgresDB) -> bool:
             return False
     return True
 
+
 def can_trigger_run(context, job_name: str) -> bool:
     """Check if previos job execution is finished"""
 
@@ -41,6 +48,7 @@ def can_trigger_run(context, job_name: str) -> bool:
         if not dagster_run.status in FINISHED_STATUSES:
             return False
     return True
+
 
 def generate_run_request(job_name: str, location_specs: list) -> RunRequest:
     """Generate run request"""
@@ -53,6 +61,7 @@ def generate_run_request(job_name: str, location_specs: list) -> RunRequest:
                 ops={'get_location_specs_from_config': PipelineConfig(location_specs = location_specs)}
                 )
             )
+
 
 @sensor(
         jobs = [osm_data_pipeline_interval_run_job, osm_data_pipeline_initial_load_job],
@@ -112,6 +121,7 @@ def osm_data_pipeline_sensor(context, postgres_db: PostgresDB):
         # If we have nothing to do
         if not location_specs_interval_run and not location_specs_initial_load:
             return SkipReason("Nothing to do")
+
 
 # List of all sensors
 osm_data_pipeline_sensors = [
