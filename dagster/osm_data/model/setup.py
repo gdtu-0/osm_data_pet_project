@@ -67,9 +67,9 @@ INITIAL_LOCATIONS = {
     }),
     6:  LocationSpec({
             'location_name': 'Novosibirsk',
-            'min_lon': Decimal('83.0862'),
+            'min_lon': Decimal('82.7016'),
             'min_lat': Decimal('54.9212'),
-            'max_lon': Decimal('82.7016'),
+            'max_lon': Decimal('83.0862'),
             'max_lat': Decimal('55.1600'),
     }),
     7:  LocationSpec({
