@@ -12,4 +12,3 @@ select  elem_id,
         k,
         v
     from element_tags
-    order by 1, 2

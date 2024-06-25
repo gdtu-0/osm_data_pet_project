@@ -43,15 +43,6 @@ models:
         data_type: string
         tests:
           - not_null
-      - name: elements_counter
-        description: Counter for distinct element IDs
-        data_type: int
-      - name: create_counter
-        description: Counter for create operations (distinct element IDs)
-        data_type: int
-      - name: modify_counter
-        description: Counter for modify operations (distinct element IDs)
-        data_type: int
 
   # dds_osm_elements
   - name: dds_osm_elements
@@ -71,13 +62,8 @@ models:
         data_type: string
         tests:
           - not_null
-      - name: location_name
-        description: Location name
-        data_type: string
-        tests:
-          - not_null
       - name: last_action
-        description: Last action (create / modify / delete) performed on element
+        description: Last action (create / modify) performed on element
         data_type: string
         tests:
           - not_null
@@ -86,6 +72,9 @@ models:
         data_type: bigint
         tests:
           - not_null
+          - relationships:
+              to: ref('dds_osm_changesets')
+              field: changeset_id
 
   # dds_osm_element_tags
   - name: dds_osm_element_tags
