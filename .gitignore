@@ -1,5 +1,5 @@
 *__pycache__*
 dbt/logs
 dbt/target
-.cube
 .pg_data
+cube/.cubestore

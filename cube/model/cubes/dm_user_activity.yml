@@ -1,0 +1,39 @@
+cubes:
+  - name: dm_user_activity
+    sql_table: dbt.dm_user_activity
+    data_source: default
+
+    joins: []
+
+    dimensions:
+
+      - name: username
+        sql: username
+        type: string
+
+      - name: location_name
+        sql: location_name
+        type: string
+
+      - name: calday
+        sql: calday
+        type: time
+
+    measures:
+
+      - name: elements_count
+        sql: elements_count
+        type: count
+      
+      - name: create_count
+        sql: create_count
+        type: count
+    
+      - name: modify_count
+        sql: modify_count
+        type: count
+
+    pre_aggregations:
+      # Pre-aggregation definitions go here.
+      # Learn more in the documentation: https://cube.dev/docs/caching/pre-aggregations/getting-started
+
