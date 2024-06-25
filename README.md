@@ -4,19 +4,19 @@ This is a project work for [OTUS](https://otus.ru/) 'Data Warehouse Analyst' cou
 
 ## Overview
 
-This project builds data pipeline over data from [Open Street Map](https://www.openstreetmap.org/), 
-a free, open geographic database updated and maintained by a community of volunteers([wiki](https://en.wikipedia.org/wiki/OpenStreetMap)).
+This project builds data pipeline over data from [Open Street Map](https://www.openstreetmap.org/)([wiki](https://en.wikipedia.org/wiki/OpenStreetMap)), 
+a free, open geographic database updated and maintained by a community of volunteers.
 
 Basic data element for analysis in this model is 'changeset'. A changeset is transactional data record that stores all map elements 
-created or modified during user's edit session and additional metadata entities.
+created or modified during user's edit session and some additional metadata entities.
 
 Changeset data is fetched from [OSM API](https://wiki.openstreetmap.org/wiki/API_v0.6), transformed and stored in [PostgreSQL](https://www.postgresql.org/) database. 
-Simple data warehousee model is built nn top of that raw changeset data using [dbt](https://www.getdbt.com/) and [cube](https://cube.dev/). 
+Simple data warehouse model is built on top of that raw data using [dbt](https://www.getdbt.com/) and [cube](https://cube.dev/). 
 ETL procces and orchestration is implemented in [Dagster](https://dagster.io/).
 
 Basic functionality:
-- fetch data from OSM public API
-- store changeset data into PostgreSQL database
+- fetch changeset records from OSM public API
+- store data into PostgreSQL database
 - build data warehouse model with dbt
 - add semantics layer with cube
 
