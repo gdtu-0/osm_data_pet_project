@@ -1,6 +1,7 @@
 version: 2
 
 models:
+
   # dds_osm_changesets
   - name: dds_osm_changesets
     description: OSM changesets
@@ -42,15 +43,16 @@ models:
         data_type: string
         tests:
           - not_null
+      - name: elements_counter
+        description: Counter for distinct element IDs
+        data_type: int
       - name: create_counter
         description: Counter for create operations (distinct element IDs)
         data_type: int
       - name: modify_counter
         description: Counter for modify operations (distinct element IDs)
         data_type: int
-      - name: delete_counter
-        description: Counter for delete operations (distinct element IDs)
-        data_type: int
+
   # dds_osm_elements
   - name: dds_osm_elements
     description: OSM elements
@@ -84,6 +86,7 @@ models:
         data_type: bigint
         tests:
           - not_null
+
   # dds_osm_element_tags
   - name: dds_osm_element_tags
     description: OSM element tags
@@ -109,6 +112,7 @@ models:
         data_type: string
         tests:
           - not_null
+
   # dds_osm_users
   - name: dds_osm_users
     description: OSM users
