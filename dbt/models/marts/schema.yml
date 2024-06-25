@@ -1,0 +1,57 @@
+version: 2
+
+models:
+
+  # dm_user_activity
+  - name: dm_user_activity
+    description: User activity
+    config:
+      tags:
+        - marts
+    columns:
+      - name: uid
+        description: User's UID
+        data_type: bigint
+      - name: username
+        description: Username
+        data_type: string
+      - name: calday
+        description: Calendar day
+        data_type: date
+      - name: location_name
+        description: Location name
+        data_type: string
+      - name: elements_count
+        description: Total number of elements affectd
+        data_type: int
+      - name: create_count
+        description: Total number of create actions
+        data_type: int
+      - name: modify_count
+        description: Total number of create actions
+        data_type: int
+  
+  # dm_top_10_contributors_for_location
+  - name: dm_top_10_contributors_for_location
+    description: Top 10 contributors for location by day
+    config:
+      tags:
+        - marts
+    columns:
+      - name: calday
+        description: Calendar day
+        data_type: date
+      - name: location_name
+        description: Location name
+        data_type: string
+      - name: position
+        description: User's position in the list
+        data_type: string
+      - name: uid
+        description: User's UID
+        data_type: bigint
+      - name: username
+        description: Username
+        data_type: string
+      - name: elements_count
+        description: Total number of elements affectd

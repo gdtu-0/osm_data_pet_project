@@ -120,3 +120,76 @@ models:
         data_type: string
         tests:
           - not_null
+  
+  # dds_osm_changeset_statistics
+  - name: dds_osm_changeset_statistics
+    description: Changeset statistical information
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: changeset_id
+        description: Changeset ID
+        data_type: bigint
+        tests:
+          - not_null
+          - unique
+      - name: elements_count
+        description: Total number of elements
+        data_type: int
+      - name: node_count
+        description: Total number of nodes
+        data_type: int
+      - name: node_create_count
+        description: Total number of nodes created
+        data_type: int
+      - name: node_modify_count
+        description: Total number of nodes modified
+        data_type: int
+      - name: way_count
+        description:  Total number of ways
+        data_type: int
+      - name: way_create_count
+        description: Total number of ways created
+        data_type: int
+      - name: way_modify_count
+        description: Total number of ways modified
+        data_type: int
+      - name: relation_count
+        description: Total number of relations
+        data_type: int
+      - name: relation_create_count
+        description: Total number of relations created
+        data_type: int
+      - name: relation_modify_count
+        description: Total number of relations modified
+        data_type: int
+  
+  # dds_osm_user_activity
+  - name: dds_osm_user_activity
+    description: User activity
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: uid
+        description: User's UID
+        data_type: bigint
+      - name: username
+        description: Username
+        data_type: string
+      - name: calday
+        description: Calendar day
+        data_type: date
+      - name: location_name
+        description: Location name
+        data_type: string
+      - name: elements_count
+        description: Total number of elements affectd
+        data_type: int
+      - name: create_count
+        description: Total number of create actions
+        data_type: int
+      - name: modify_count
+        description: Total number of create actions
+        data_type: int
