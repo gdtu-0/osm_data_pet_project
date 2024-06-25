@@ -1,5 +1,6 @@
 # osm_data_pet_project
-This is a pet project for OTUS Data Warehouse Analyst course.
+
+This is a project work for [OTUS](https://otus.ru/) 'Data Warehouse Analyst' course.
 
 ## Overview
 
@@ -17,12 +18,15 @@ To run this project you need to insall [Docker](https://www.docker.com/)
 
 **Download**
 
-Create new empty folder for the project `mkdir osm_data && cd osm_data` 
-Clone this repo `git clone https://github.com/gdtu-0/osm_data_pet_project.git && cd osm_data_pet_project` 
+Create new empty folder for the project `mkdir osm_data && cd osm_data`
+
+Clone this repo `git clone https://github.com/gdtu-0/osm_data_pet_project.git && cd osm_data_pet_project`
 
 **Startup and shutdown**
-To start the project run `docker compose up -d` 
-To stop containers run `docker compose down` 
+
+To start the project run `docker compose up -d`
+
+To stop containers run `docker compose down`
 
 ## Next steps
 
