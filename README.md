@@ -146,7 +146,7 @@ This project has no sepatare dbt service, it uses `dagster-dbt` module instead. 
 You can find them in 'Assets' tab in dagster UI. For better visualization click 'View global asset lineage'.
 
 Dagster also handles dbt orchestration. You can build dbt models and run tests by selecting an Asset and clicking 
-'Materiallize selected'. To build all models use 'Materiallize all' or run **run_dbt_modles** job.
+'Materiallize selected'. To build all models use 'Materiallize all' or run `run_dbt_modles` job.
 
 Source code for dbt models is located at `dbt/` directory. You can make changes in models and import them into Dagster. 
 On Assets tab click 'Reload definitions'. No restart required.
