@@ -34,7 +34,7 @@ To start the project run: `docker compose up -d`.
 This command runs containers in background. Containers keep running even if you restart the system.
 
 To stop containers run: `docker compose down`. PostgreSQL is configured to store database outside the container in
-`.pg_data` directory so no dowloaded data is lost on shutdown. Dagster run history and statistics will be lost on 
+`.pg_data/` directory so no dowloaded data is lost on shutdown. Dagster run history and statistics will be lost on 
 shutdown but it does not affect project functionality.
 
 # General information
