@@ -34,7 +34,7 @@ To start the project run: `docker compose up -d`.
 This command runs containers in background. Containers keep running even if you restart the system.
 
 To stop containers run: `docker compose down`. PostgreSQL is configured to store database outside the container in
-``.pg_data`` directory so no dowloaded data is lost on shutdown. Dagster run history and statistics will be lost on 
+`.pg_data` directory so no dowloaded data is lost on shutdown. Dagster run history and statistics will be lost on 
 shutdown but it does not affect project functionality.
 
 # General information
@@ -145,15 +145,20 @@ for them;
 
 ## Making changes
 
-
+Dagser-related code is located at `dagster/osm_data/` directory. If you make any change to source code, go to 'Deployment' 
+tab and click 'Reload all'. No restart required.
 
 # dbt
 
 This project has no sepatare dbt service, it uses `dagster-dbt` module instead. All dbt models are exposed as dagster Assets. 
 You can find them in 'Assets' tab in dagster UI. For better visualization click 'View global asset lineage'.
 
+## Running models
+
 Dagster also handles dbt orchestration. You can build dbt models and run tests by selecting an Asset and clicking 
 'Materiallize selected'. To build all models use 'Materiallize all' or run `run_dbt_modles` job.
+
+## Making changes
 
 Source code for dbt models is located at `dbt/` directory. You can make changes in models and import them into Dagster. 
 On Assets tab click 'Reload definitions'. No restart required.
@@ -164,7 +169,7 @@ By default cube user interface is available at [http://localhost:4000](http://lo
 
 # PostgreSQL
 
-If you need to connect to PostgreSQL database use 'localhost' for host and default 5432 port. Credentials can be found in 
+If you need to connect to PostgreSQL database use `localhost` for host and default `5432` port. Credentials can be found in 
 `.env` file in 'TARGET_DB*' section.
 
 # Next steps
