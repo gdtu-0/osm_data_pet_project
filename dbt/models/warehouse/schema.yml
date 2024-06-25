@@ -137,33 +137,53 @@ models:
       - name: elements_count
         description: Total number of elements
         data_type: int
+        tests:
+          - not_null
       - name: node_count
         description: Total number of nodes
         data_type: int
+        tests:
+          - not_null
       - name: node_create_count
         description: Total number of nodes created
         data_type: int
+        tests:
+          - not_null
       - name: node_modify_count
         description: Total number of nodes modified
         data_type: int
+        tests:
+          - not_null
       - name: way_count
         description:  Total number of ways
         data_type: int
+        tests:
+          - not_null
       - name: way_create_count
         description: Total number of ways created
         data_type: int
+        tests:
+          - not_null
       - name: way_modify_count
         description: Total number of ways modified
         data_type: int
+        tests:
+          - not_null
       - name: relation_count
         description: Total number of relations
         data_type: int
+        tests:
+          - not_null
       - name: relation_create_count
         description: Total number of relations created
         data_type: int
+        tests:
+          - not_null
       - name: relation_modify_count
         description: Total number of relations modified
         data_type: int
+        tests:
+          - not_null
   
   # dds_osm_user_activity
   - name: dds_osm_user_activity
@@ -175,21 +195,72 @@ models:
       - name: uid
         description: User's UID
         data_type: bigint
+        tests:
+          - not_null
       - name: username
         description: Username
         data_type: string
+        tests:
+          - not_null
       - name: calday
         description: Calendar day
         data_type: date
+        tests:
+          - not_null
       - name: location_name
         description: Location name
         data_type: string
+        tests:
+          - not_null
       - name: elements_count
         description: Total number of elements affectd
         data_type: int
+        tests:
+          - not_null
       - name: create_count
         description: Total number of create actions
         data_type: int
+        tests:
+          - not_null
       - name: modify_count
         description: Total number of create actions
         data_type: int
+        tests:
+          - not_null
+  
+  # dds_osm_element_names
+  - name: dds_osm_element_names
+    description: OSM element names
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: elem_id
+        description: Element ID
+        data_type: bigint
+        tests:
+          - not_null
+      - name: elem_name
+        description: Element name
+        data_type: str
+        tests:
+          - not_null
+  
+  # dds_osm_elemment_location_link
+  - name: dds_osm_elemment_location_link
+    description: Link elements to locations
+    config:
+      tags:
+        - warehouse
+    columns:
+      - name: elem_id
+        description: Element ID
+        data_type: bigint
+        tests:
+          - not_null
+          - unique
+      - name: location_name
+        description: Location name
+        data_type: string
+        tests:
+          - not_null

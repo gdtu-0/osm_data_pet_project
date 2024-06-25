@@ -55,3 +55,39 @@ models:
         data_type: string
       - name: elements_count
         description: Total number of elements affectd
+  
+  # dm_location_highways
+  - name: dm_location_highways
+    description: List oof location highway names
+    config:
+      tags:
+        - marts
+    columns:
+      - name: location_name
+        description: Location name
+        data_type: string
+        tests:
+          - not_null
+      - name: highway_name
+        description: Highway name
+        data_type: string
+        tests:
+          - not_null
+
+  # dm_location_amenities
+  - name: dm_location_amenities
+    description: List oof location amenity names
+    config:
+      tags:
+        - marts
+    columns:
+      - name: location_name
+        description: Location name
+        data_type: string
+        tests:
+          - not_null
+      - name: amenity_name
+        description: Amenity name
+        data_type: string
+        tests:
+          - not_null
