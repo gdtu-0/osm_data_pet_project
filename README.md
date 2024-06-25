@@ -153,6 +153,8 @@ tab and click 'Reload all'. No restart required.
 This project has no sepatare dbt service, it uses `dagster-dbt` module instead. All dbt models are exposed as dagster Assets. 
 You can find them in 'Assets' tab in dagster UI. For better visualization click 'View global asset lineage'.
 
+![Image](/.images/dbt_asset_graph.png)
+
 ## Running models
 
 Dagster also handles dbt orchestration. You can build dbt models and run tests by selecting an Asset and clicking 
