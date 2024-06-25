@@ -54,7 +54,7 @@ After startup dagster will automaically insert them into setup table and start i
 
 ## Time slice
 
-OSM API returns a most 100 changesets per request. In order to not overload API server, data is fetched in 15 
+OSM API returns a most 100 changesets per request. In order to not overload API server, data is fetched in 60 
 minutes slices (this can be confiigured by changing the value of `OSM_DATA_UPDATE_INTERVAL_MINUTES` constant in 
 `dagster/model/seettings.py`). So basically we get 100 changesets per time slice. IMPORTANT: If no changes have been 
 made during the slice API will return the same 100 changesets as in previous request.
