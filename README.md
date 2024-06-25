@@ -169,6 +169,8 @@ On Assets tab click 'Reload definitions'. No restart required.
 
 By default cube user interface is available at [http://localhost:4000](http://localhost:4000).
 
+![Image](/.images/cube.png)
+
 # PostgreSQL
 
 If you need to connect to PostgreSQL database use `localhost` for host and default `5432` port. Credentials can be found in 
