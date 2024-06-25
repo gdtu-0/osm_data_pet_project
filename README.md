@@ -78,7 +78,6 @@ triggers the job;
 - **manual load** - get recent (top 100) changesets for all locations, ignoring last update timestamp and initial 
 load flag. Affects location update timestamp but does not reset initial load flag. 
 
-
 **Dagster**
 
 ---
@@ -88,8 +87,23 @@ By default dagster user interface is available at [http://localhost:3000](http:/
 **Jobs:**
 
 **db_maintenance**
-![Image](/.images/db_maintenance.png) 
 
+![Image](/.images/db_maintenance.png)
+
+This job consists of three ops:
+- **maintain_db_integrity** - checks if all setup and staging tables defined in `dagster/model/seettings.py` are created 
+and creates them if needed. Then it checks that for all initial locations defined in `dagster/model/initial_locations.py` 
+there are records in setup tables and inserts them in case they are missing.
+- **db_housekeeping** - deletes old changeset data loads from staging tables. Every load has `load_timestamp` field.  
+By default this op deletes records loaded more than 7 days before current timestamp (this can be changed by setting 
+`KEEP_CHANGESET_DATA_FOR_NUM_DAYS` constant in `dagster/model/seettings.py`).
+- **dagster_housekeeping** - deletes old dagster run records. By default this op deletes records run more than 7 days 
+before current timestamp (this can be changed by setting `KEEP_DAGSTER_RUNS_FOR_NUM_DAYS` constant in 
+`dagster/model/seettings.py`).
+
+**osm_data_pipeline_manual_run**
+
+![Image](/.images/osm_data_pipeline_manual_run.png)
 
 
 **dbt**
@@ -105,13 +119,11 @@ Dagster also handles dbt orchestration. You can build dbt models and run tests b
 Source code for dbt models is located at `dbt/` directory. You can make changes in models and import them into Dagster. 
 On Assets tab click 'Reload definitions'. No restart required.
 
-
 **cube**
 
 ---
 
 By default cube user interface is available at [http://localhost:4000](http://localhost:4000).
-
 
 **PostgreSQL**
 
