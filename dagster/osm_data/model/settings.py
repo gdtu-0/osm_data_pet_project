@@ -17,6 +17,9 @@ INITIAL_LOAD_NUM_DAYS = 7
 # OSM data update interval
 OSM_DATA_UPDATE_INTERVAL_MINUTES = 15
 
+# OSM data pipeline sensor interval
+OSM_DPL_SENSOR_UPDATE_INTERVAL_SECONDS = 60
+
 
 # ==================== Setup tables ====================
 

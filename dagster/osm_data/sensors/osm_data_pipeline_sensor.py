@@ -1,7 +1,10 @@
 from datetime import datetime, timezone, timedelta
 from ..ops.osm_data_pipeline import PipelineConfig
 from ..resources import PostgresDB
-from ..model.settings import OSM_DATA_UPDATE_INTERVAL_MINUTES
+from ..model.settings import (
+    OSM_DPL_SENSOR_UPDATE_INTERVAL_SECONDS,
+    OSM_DATA_UPDATE_INTERVAL_MINUTES
+)
 from dagster import (
     sensor,
     RunRequest,
@@ -66,7 +69,7 @@ def generate_run_request(job_name: str, location_specs: list) -> RunRequest:
 @sensor(
         jobs = [osm_data_pipeline_interval_run_job, osm_data_pipeline_initial_load_job],
         default_status = DefaultSensorStatus.RUNNING,
-        minimum_interval_seconds = 60,
+        minimum_interval_seconds = OSM_DPL_SENSOR_UPDATE_INTERVAL_SECONDS,
 )
 def osm_data_pipeline_sensor(context, postgres_db: PostgresDB):
     """Sensor to trigger pipeline runs"""

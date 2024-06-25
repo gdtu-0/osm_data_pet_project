@@ -33,9 +33,9 @@ Clone this repo: `git clone https://github.com/gdtu-0/osm_data_pet_project.git &
 To start the project run: `docker compose up -d`. 
 This command runs containers in background. Containers keep running even if you restart the system.
 
-To stop containers run: `docker compose down`. PostgreSQL is configured to store database outside the container so 
-you will not loose dowloaded data on shutdown. Dagster run history and statistics will be lost on shutdown but it 
-does not affect project functionality.
+To stop containers run: `docker compose down`. PostgreSQL is configured to store database outside the container in
+``.pg_data`` directory so no dowloaded data is lost on shutdown. Dagster run history and statistics will be lost on 
+shutdown but it does not affect project functionality.
 
 # General information
 
@@ -55,17 +55,18 @@ After startup dagster will automaically insert them into setup table and start i
 ## Time slice
 
 OSM API returns a most 100 changesets per request. In order to not overload API server, data is fetched in 15 
-minutes slices (this can be changed by setting `OSM_DATA_UPDATE_INTERVAL_MINUTES` constant in `dagster/model/seettings.py`). 
-So basically we get 100 changesets per time slice. IMPORTANT: If no changes have been made during the slice API will 
-return the same 100 changesets as in previous request.
+minutes slices (this can be confiigured by changing the value of `OSM_DATA_UPDATE_INTERVAL_MINUTES` constant in 
+`dagster/model/seettings.py`). So basically we get 100 changesets per time slice. IMPORTANT: If no changes have been 
+made during the slice API will return the same 100 changesets as in previous request.
 
 ## Load modes
 
 Data pipeline supports three types of loading process:
 - **initial load** - if there are no statistics records for specified location dagster will automatically trigger 
-initial load. By default it loads data for 7 days before current date (this can be changed by setting `INITIAL_LOAD_NUM_DAYS` 
-constant in `dagster/model/seettings.py`). Initial load is considered finished when next timestamp to load data from is 
-greater than or equal to current timestamp. Initial load is performed in time slices, as well as interval load;
+initial load. By default it loads data for 7 days before current date (this can be confiigured by changing the value of 
+`INITIAL_LOAD_NUM_DAYS` constant in `dagster/model/seettings.py`). Initial load is considered finished when next timestamp 
+to load data from is greater than or equal to current timestamp. Initial load is performed in time slices, as well as 
+interval load;
 - **interval load** - this is default automatic load mode. If initial load is not required for location dagster checks 
 location last update timestamp, adds timedelta for time slice to it, and if result timestamp is less than current time 
 triggers the job;
@@ -87,13 +88,13 @@ This job consists of three ops:
 and creates them if needed. Then it checks that for all initial locations defined in `dagster/model/initial_locations.py` 
 there are records in setup tables and inserts them in case they are missing.
 - **db_housekeeping** - deletes old changeset data loads from staging tables. Every load has `load_timestamp` field.  
-By default this op deletes records loaded more than 7 days before current timestamp (this can be changed by setting 
-`KEEP_CHANGESET_DATA_FOR_NUM_DAYS` constant in `dagster/model/seettings.py`).
+By default this op deletes records loaded more than 7 days before current timestamp (this can be confiigured by changing 
+the value of `KEEP_CHANGESET_DATA_FOR_NUM_DAYS` constant in `dagster/model/seettings.py`).
 - **dagster_housekeeping** - deletes old dagster run records. By default this op deletes records run more than 7 days 
-before current timestamp (this can be changed by setting `KEEP_DAGSTER_RUNS_FOR_NUM_DAYS` constant in 
+before current timestamp (this can be confiigured by changing the value of `KEEP_DAGSTER_RUNS_FOR_NUM_DAYS` constant in 
 `dagster/model/seettings.py`).
 
-Job `db_maintenance` is scheduled to run every 2 minutes (this can be changed by setting 
+Job `db_maintenance` is scheduled to run every 2 minutes (this can be confiigured by changing the value of 
 `RUN_DB_MAINTENANCE_EVERY_NUM_MINUTES` constant in `dagster/model/seettings.py`).
 
 ---
@@ -131,7 +132,9 @@ This job materializes all dbt model assets. See [dbt](#dbt) section below.
 
 **osm_data_pipeline_sensor**
 
-This sensor is responcible for triggering OSM data pipeline auto runs. By default this sensor runs every 60 seconds. 
+This sensor is responcible for triggering OSM data pipeline auto runs. By default this sensor runs every 60 seconds 
+(this can be confiigured by changing the value of `OSM_DPL_SENSOR_UPDATE_INTERVAL_SECONDS` constant in 
+`dagster/model/seettings.py`).
 
 Sensor logic:
 - Read location specifications from database;
@@ -139,6 +142,10 @@ Sensor logic:
 for them;
 - Collect all locations that don't have `initial_load_required` flag set and `update_timestamp` +
 `OSM_DATA_UPDATE_INTERVAL_MINUTES` <= current timestamp. Trigger `osm_data_pipeline_interval_run` for them.
+
+## Making changes
+
+
 
 # dbt
 
