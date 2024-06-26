@@ -23,7 +23,7 @@ cubes:
       
       - name: elements_count
         sql: elements_count
-        type: string
+        type: count
 
     pre_aggregations:
       # Pre-aggregation definitions go here.

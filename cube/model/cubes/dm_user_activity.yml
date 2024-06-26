@@ -31,7 +31,7 @@ cubes:
       
       - name: modify_count
         sql: modify_count
-        type: string
+        type: count
 
     pre_aggregations:
       # Pre-aggregation definitions go here.
